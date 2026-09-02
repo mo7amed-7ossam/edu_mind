@@ -1,0 +1,737 @@
+import { useState, useRef, useEffect } from 'react';
+import { SubscriptionsPage } from './components/SubscriptionsPage';
+import { UsersPage } from './components/UsersPage';
+import { AcademicCalendarPage } from './components/AcademicCalendarPage';
+import { CountriesPage } from './components/CountriesPage';
+
+export default function App() {
+  const [activePage, setActivePage] = useState<string>('users');
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    users: true,
+    foundation: true,
+  });
+
+  const [isNotifOpen, setIsNotifOpen] = useState<boolean>(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const [isAvatarOpen, setIsAvatarOpen] = useState<boolean>(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
+
+  // حالة الشاشة الفرعية وزر الرجوع
+  const [isSubScreen, setIsSubScreen] = useState<boolean>(false);
+  const [subScreenTitle, setSubScreenTitle] = useState<string>('');
+  const backHandlerRef = useRef<(() => void) | null>(null);
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      icon: '👤',
+      title: 'مستخدم جديد انضم: أحمد المطيري',
+      time: 'منذ 3 دقائق',
+      unread: true,
+      bg: 'rgb(227, 247, 244)',
+    },
+    {
+      id: 2,
+      icon: '📝',
+      title: 'تم رفع محتوى جديد بانتظار المراجعة',
+      time: 'منذ 15 دقيقة',
+      unread: true,
+      bg: 'rgb(227, 247, 244)',
+    },
+    {
+      id: 3,
+      icon: '🏆',
+      title: 'خالد الزهراني حقق إنجاز "المتعلم النشط"',
+      time: 'منذ 42 دقيقة',
+      unread: true,
+      bg: 'rgb(227, 247, 244)',
+    },
+    {
+      id: 4,
+      icon: '💳',
+      title: 'اشتراك جديد: الخطة المميزة — الإمارات',
+      time: 'منذ ساعة',
+      unread: false,
+      bg: 'var(--light)',
+    },
+    {
+      id: 5,
+      icon: '🛡️',
+      title: 'تنبيه محتوى: 2 محادثة تحتاج مراجعة يدوية',
+      time: 'منذ ساعتين',
+      unread: false,
+      bg: 'var(--light)',
+    },
+  ]);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+      }
+      if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
+        setIsAvatarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const toggleGroup = (groupName: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
+  };
+
+  const handlePageSelect = (page: string) => {
+    setActivePage(page);
+    setIsSubScreen(false);
+    setSubScreenTitle('');
+    backHandlerRef.current = null;
+  };
+
+  const getPageDetails = () => {
+    switch (activePage) {
+      case 'users':
+        return {
+          title: 'المستخدمون',
+          crumb: 'المستخدمون / أولياء الأمور والطلاب',
+        };
+      case 'subscriptions':
+        return {
+          title: 'الاشتراكات والخطط',
+          crumb: 'المستخدمون / الاشتراكات والخطط',
+        };
+      case 'countries':
+        return {
+          title: 'الدول',
+          crumb: 'الإعداد التأسيسي / الدول',
+        };
+      case 'calendar':
+        return {
+          title: 'التقويم الأكاديمي',
+          crumb: 'البيانات الأساسية / التقويم الأكاديمي',
+        };
+      case 'dashboard':
+        return {
+          title: 'لوحة التحكم',
+          crumb: 'الرئيسية',
+        };
+      default:
+        return {
+          title: 'المستخدمون',
+          crumb: 'المستخدمون',
+        };
+    }
+  };
+
+  const pageInfo = getPageDetails();
+
+  const handleBackClick = () => {
+    if (backHandlerRef.current) {
+      backHandlerRef.current();
+    } else {
+      setIsSubScreen(false);
+    }
+  };
+
+  return (
+    <div className="admin-container">
+      {/* السايد بار */}
+      <div className="admin-sidebar">
+        <div className="sidebar-brand">
+          <span>🎓</span>
+          <span>لوحة إدارة المنصة</span>
+        </div>
+
+        <div
+          className={`sidebar-item ${activePage === 'dashboard' ? 'active' : ''}`}
+          onClick={() => handlePageSelect('dashboard')}
+        >
+          <span className="ic">🏠</span>
+          <span>لوحة التحكم</span>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['foundation'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('foundation')}
+          >
+            <span>الإعداد التأسيسي</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['foundation'] ? '400px' : '0px',
+              opacity: openGroups['foundation'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'countries' ? 'active' : ''}`} onClick={() => handlePageSelect('countries')}>
+              <span className="ic">🌍</span>
+              <span>الدول</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'classes' ? 'active' : ''}`} onClick={() => handlePageSelect('classes')}>
+              <span className="ic">🏫</span>
+              <span>الصفوف الدراسية</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'subjects' ? 'active' : ''}`} onClick={() => handlePageSelect('subjects')}>
+              <span className="ic">📚</span>
+              <span>المواد الدراسية</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'curriculum' ? 'active' : ''}`} onClick={() => handlePageSelect('curriculum')}>
+              <span className="ic">🌳</span>
+              <span>المنهج الدراسي</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'questions' ? 'active' : ''}`} onClick={() => handlePageSelect('questions')}>
+              <span className="ic">❓</span>
+              <span>بنك الأسئلة</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'calendar' ? 'active' : ''}`} onClick={() => handlePageSelect('calendar')}>
+              <span className="ic">📅</span>
+              <span>التقويم الأكاديمي</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['users'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('users')}
+          >
+            <span>المستخدمون</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['users'] ? '200px' : '0px',
+              opacity: openGroups['users'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'users' ? 'active' : ''}`} onClick={() => handlePageSelect('users')}>
+              <span className="ic">👥</span>
+              <span>المستخدمون</span>
+            </div>
+            <div
+              className={`sidebar-item sub ${activePage === 'subscriptions' ? 'active' : ''}`}
+              onClick={() => handlePageSelect('subscriptions')}
+            >
+              <span className="ic">💳</span>
+              <span>الاشتراكات والخطط</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['motivation'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('motivation')}
+          >
+            <span>التحفيز والإشعارات</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['motivation'] ? '200px' : '0px',
+              opacity: openGroups['motivation'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'rewards' ? 'active' : ''}`} onClick={() => handlePageSelect('rewards')}>
+              <span className="ic">🏆</span>
+              <span>الإنجازات والمكافآت</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'notif-templates' ? 'active' : ''}`} onClick={() => handlePageSelect('notif-templates')}>
+              <span className="ic">🔔</span>
+              <span>قوالب الإشعارات</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['ai'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('ai')}
+          >
+            <span>الذكاء الاصطناعي والسلامة</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['ai'] ? '200px' : '0px',
+              opacity: openGroups['ai'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'ai-safety' ? 'active' : ''}`} onClick={() => handlePageSelect('ai-safety')}>
+              <span className="ic">🛡️</span>
+              <span>المساعد الذكي والسلامة</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['governance'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('governance')}
+          >
+            <span>الحوكمة</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['governance'] ? '200px' : '0px',
+              opacity: openGroups['governance'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'roles' ? 'active' : ''}`} onClick={() => handlePageSelect('roles')}>
+              <span className="ic">🔐</span>
+              <span>الأدوار والصلاحيات</span>
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'settings' ? 'active' : ''}`} onClick={() => handlePageSelect('settings')}>
+              <span className="ic">⚙️</span>
+              <span>الإعدادات العامة</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['reports'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('reports')}
+          >
+            <span>التقارير</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['reports'] ? '200px' : '0px',
+              opacity: openGroups['reports'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'analytics' ? 'active' : ''}`} onClick={() => handlePageSelect('analytics')}>
+              <span className="ic">📊</span>
+              <span>التقارير والتحليلات</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['companion'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('companion')}
+          >
+            <span>الرفيق التعليمي</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['companion'] ? '200px' : '0px',
+              opacity: openGroups['companion'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'companion-catalog' ? 'active' : ''}`} onClick={() => handlePageSelect('companion-catalog')}>
+              <span className="ic">🧸</span>
+              <span>كتالوج الرفيق التعليمي</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div
+            className={`sidebar-grp-header ${openGroups['system'] ? 'open' : ''}`}
+            onClick={() => toggleGroup('system')}
+          >
+            <span>النظام</span>
+            <span className="chev">‹</span>
+          </div>
+          <div
+            className="sidebar-grp-children"
+            style={{
+              maxHeight: openGroups['system'] ? '200px' : '0px',
+              opacity: openGroups['system'] ? 1 : 0,
+            }}
+          >
+            <div className={`sidebar-item sub ${activePage === 'design-system' ? 'active' : ''}`} onClick={() => handlePageSelect('design-system')}>
+              <span className="ic">🎨</span>
+              <span>نظام التصميم</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`sidebar-item bottom ${activePage === 'feedback' ? 'active' : ''}`}
+          onClick={() => handlePageSelect('feedback')}
+        >
+          <span className="ic">💬</span>
+          <span>مراجعة آراء أولياء الأمور</span>
+        </div>
+      </div>
+
+      {/* المحتوى الرئيسي و الهيدر */}
+      <div className="admin-main">
+        {/* الهيدر */}
+        <div className="admin-topbar">
+          <div>
+            <div className="topbar-title">{pageInfo.title}</div>
+            <div className="topbar-crumb">
+              {isSubScreen ? `${pageInfo.crumb} / ${subScreenTitle || 'تفاصيل'}` : pageInfo.crumb}
+            </div>
+          </div>
+          <div className="topbar-tools" style={{ position: 'relative' }}>
+            {isSubScreen && (
+              <button
+                type="button"
+                className="abtn outline"
+                style={{ fontSize: '10px', padding: '6px 12px', gap: '4px' }}
+                onClick={handleBackClick}
+              >
+                ← رجوع
+              </button>
+            )}
+
+            <div ref={notifRef} style={{ position: 'relative' }}>
+              <div
+                className="topbar-notif-btn"
+                onClick={() => setIsNotifOpen((prev) => !prev)}
+                title="الإشعارات"
+              >
+                🔔{unreadCount > 0 && <span className="topbar-notif-dot"></span>}
+              </div>
+
+              {isNotifOpen && (
+                <div
+                  className="topbar-dropdown"
+                  style={{ width: '310px', left: '0px', right: 'auto' }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <span style={{ fontWeight: 800, fontSize: '12.5px' }}>
+                      الإشعارات{' '}
+                      {unreadCount > 0 && (
+                        <span
+                          style={{
+                            background: 'var(--coral)',
+                            color: 'rgb(255, 255, 255)',
+                            fontSize: '9px',
+                            borderRadius: '10px',
+                            padding: '1px 6px',
+                            marginRight: '4px',
+                          }}
+                        >
+                          {unreadCount}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      onClick={markAllAsRead}
+                      style={{
+                        fontSize: '10px',
+                        color: 'var(--teal)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      تعيين الكل كمقروء
+                    </span>
+                  </div>
+
+                  {notifications.map((notif, idx) => (
+                    <div
+                      key={notif.id}
+                      style={{
+                        display: 'flex',
+                        gap: '10px',
+                        padding: '9px 0px',
+                        borderBottom:
+                          idx === notifications.length - 1
+                            ? 'none'
+                            : '1px solid var(--light)',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: notif.bg,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {notif.icon}
+                      </div>
+                      <div style={{ flex: '1 1 0%', minWidth: '0px' }}>
+                        <div
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--navy)',
+                            fontWeight: notif.unread ? 700 : 400,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {notif.title}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '9px',
+                            color: 'var(--gray)',
+                            marginTop: '2px',
+                          }}
+                        >
+                          {notif.time}
+                        </div>
+                      </div>
+                      {notif.unread && (
+                        <div
+                          style={{
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: 'var(--teal)',
+                            flexShrink: 0,
+                            marginTop: '4px',
+                          }}
+                        ></div>
+                      )}
+                    </div>
+                  ))}
+
+                  <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                    <span
+                      style={{
+                        fontSize: '10.5px',
+                        color: 'var(--teal)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      عرض كل الإشعارات ←
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div ref={avatarRef} style={{ position: 'relative' }}>
+              <div
+                className="avatar"
+                onClick={() => setIsAvatarOpen((prev) => !prev)}
+                style={{
+                  background: 'var(--navy)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+                title="قائمة المستخدم"
+              >
+                أد
+              </div>
+
+              {isAvatarOpen && (
+                <div
+                  className="topbar-dropdown"
+                  style={{ width: '220px', left: '0px', right: 'auto' }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      alignItems: 'center',
+                      paddingBottom: '12px',
+                      borderBottom: '1px solid var(--light)',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    <div
+                      className="avatar"
+                      style={{
+                        background: 'var(--navy)',
+                        width: '36px',
+                        height: '36px',
+                        fontSize: '14px',
+                        flexShrink: 0,
+                      }}
+                    >
+                      أد
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '11.5px' }}>
+                        المدير العام
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '9.5px',
+                          color: 'var(--gray)',
+                          fontFamily: 'Poppins',
+                        }}
+                      >
+                        admin@smartlearn.sa
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '9px',
+                      padding: '8px 4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'var(--navy)',
+                      cursor: 'pointer',
+                      borderRadius: '7px',
+                    }}
+                    className="hover:bg-[#F1F3F5] transition-colors"
+                  >
+                    <span style={{ fontSize: '14px' }}>👤</span>
+                    <span>الملف الشخصي</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '9px',
+                      padding: '8px 4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'var(--navy)',
+                      cursor: 'pointer',
+                      borderRadius: '7px',
+                    }}
+                    className="hover:bg-[#F1F3F5] transition-colors"
+                  >
+                    <span style={{ fontSize: '14px' }}>⚙️</span>
+                    <span>إعدادات الحساب</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '9px',
+                      padding: '8px 4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'var(--navy)',
+                      cursor: 'pointer',
+                      borderRadius: '7px',
+                    }}
+                    className="hover:bg-[#F1F3F5] transition-colors"
+                  >
+                    <span style={{ fontSize: '14px' }}>🔐</span>
+                    <span>الأدوار والصلاحيات</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '9px',
+                      padding: '8px 4px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'var(--navy)',
+                      cursor: 'pointer',
+                      borderRadius: '7px',
+                    }}
+                    className="hover:bg-[#F1F3F5] transition-colors"
+                  >
+                    <span style={{ fontSize: '14px' }}>📊</span>
+                    <span>التقارير</span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid var(--light)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '9px',
+                        padding: '8px 4px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: 'var(--coral)',
+                        cursor: 'pointer',
+                        borderRadius: '7px',
+                      }}
+                      className="hover:bg-[#FFF5F5] transition-colors"
+                    >
+                      <span style={{ fontSize: '14px' }}>🚪</span>
+                      <span>تسجيل الخروج</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* مساحة المحتوى */}
+        <div className="admin-content">
+          {activePage === 'users' ? (
+            <UsersPage
+              onSubScreenChange={(isSub, title) => {
+                setIsSubScreen(isSub);
+                setSubScreenTitle(title || '');
+              }}
+              onBackRequest={(fn) => {
+                backHandlerRef.current = fn;
+              }}
+            />
+          ) : activePage === 'subscriptions' ? (
+            <SubscriptionsPage />
+          ) : activePage === 'calendar' ? (
+            <AcademicCalendarPage
+              onSubScreenChange={(isSub, title) => {
+                setIsSubScreen(isSub);
+                setSubScreenTitle(title || '');
+              }}
+              onBackRequest={(fn) => {
+                backHandlerRef.current = fn;
+              }}
+            />
+          ) : activePage === 'countries' ? (
+            <CountriesPage />
+          ) : (
+            <div className="admin-panel text-center py-12 text-[#5A6472]">
+              الصفحة قيد التطوير
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
