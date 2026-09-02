@@ -138,6 +138,7 @@ body {
   transition: all 0.15s ease-in-out;
   position: relative;
   text-decoration: none;
+  user-select: none;
 }
 
 .sidebar-item:hover {
@@ -484,11 +485,6 @@ body {
 }
 
 /* 7. حقول الإدخال — Form Fields */
-input, select, textarea {
-  text-align: right;
-  direction: rtl;
-}
-
 .admin-input, .admin-select, .admin-textarea {
   border: 1.5px solid var(--border-mid);
   border-radius: 9px;
@@ -501,8 +497,6 @@ input, select, textarea {
   outline: none;
   transition: border-color 0.15s ease;
   width: 100%;
-  text-align: right;
-  direction: rtl;
 }
 
 .admin-input:focus, .admin-select:focus, .admin-textarea:focus {
