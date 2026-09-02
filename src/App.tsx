@@ -3,6 +3,7 @@ import { SubscriptionsPage } from './components/SubscriptionsPage';
 import { UsersPage } from './components/UsersPage';
 import { AcademicCalendarPage } from './components/AcademicCalendarPage';
 import { CountriesPage } from './components/CountriesPage';
+import { DashboardPage } from './components/DashboardPage';
 
 const PAGE_GROUP_MAP: Record<string, string> = {
   countries: 'foundation',
@@ -61,7 +62,7 @@ function getPageFromUrl(): string {
     // ignore
   }
 
-  return 'calendar';
+  return 'dashboard';
 }
 
 export default function App() {
@@ -154,9 +155,9 @@ export default function App() {
     };
   }, []);
 
-  // المزامنة مع أزرار الرجوع والتنقل بالمتصفح
+  // المزامنة مع أزرار الرجوع والتنقل بالمتصفح والهاش
   useEffect(() => {
-    const handlePopState = () => {
+    const handleUrlChange = () => {
       const page = getPageFromUrl();
       setActivePage(page);
       const matchedGroup = PAGE_GROUP_MAP[page];
@@ -171,9 +172,11 @@ export default function App() {
       backHandlerRef.current = null;
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
     };
   }, []);
 
@@ -184,9 +187,9 @@ export default function App() {
     } catch {
       // ignore
     }
-    const currentPath = window.location.pathname.replace(/^\/+|\/+$/g, '').split('?')[0];
-    if (currentPath !== activePage && window.history.replaceState) {
-      window.history.replaceState({ page: activePage }, '', `/${activePage}`);
+    const currentHash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
+    if (currentHash !== activePage) {
+      window.location.hash = `#/${activePage}`;
     }
   }, [activePage]);
 
@@ -221,16 +224,16 @@ export default function App() {
     if (e) {
       if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.button === 0) {
         e.preventDefault();
-        const targetPath = `/${page}`;
-        if (window.location.pathname !== targetPath) {
-          window.history.pushState({ page }, '', targetPath);
+        const targetHash = `#/${page}`;
+        if (window.location.hash !== targetHash) {
+          window.location.hash = targetHash;
         }
         handlePageSelect(page);
       }
     } else {
-      const targetPath = `/${page}`;
-      if (window.location.pathname !== targetPath) {
-        window.history.pushState({ page }, '', targetPath);
+      const targetHash = `#/${page}`;
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
       }
       handlePageSelect(page);
     }
@@ -351,7 +354,7 @@ export default function App() {
       {/* السايد بار */}
       <div className="admin-sidebar">
         <a
-          href="/dashboard"
+          href="#/dashboard"
           className="sidebar-brand no-underline text-inherit"
           onClick={(e) => navigateTo('dashboard', e)}
         >
@@ -360,7 +363,7 @@ export default function App() {
         </a>
 
         <a
-          href="/dashboard"
+          href="#/dashboard"
           className={`sidebar-item ${activePage === 'dashboard' ? 'active' : ''}`}
           onClick={(e) => navigateTo('dashboard', e)}
         >
@@ -384,7 +387,7 @@ export default function App() {
             }}
           >
             <a
-              href="/countries"
+              href="#/countries"
               className={`sidebar-item sub ${activePage === 'countries' ? 'active' : ''}`}
               onClick={(e) => navigateTo('countries', e)}
             >
@@ -392,7 +395,7 @@ export default function App() {
               <span>الدول</span>
             </a>
             <a
-              href="/classes"
+              href="#/classes"
               className={`sidebar-item sub ${activePage === 'classes' ? 'active' : ''}`}
               onClick={(e) => navigateTo('classes', e)}
             >
@@ -400,7 +403,7 @@ export default function App() {
               <span>الصفوف الدراسية</span>
             </a>
             <a
-              href="/subjects"
+              href="#/subjects"
               className={`sidebar-item sub ${activePage === 'subjects' ? 'active' : ''}`}
               onClick={(e) => navigateTo('subjects', e)}
             >
@@ -408,7 +411,7 @@ export default function App() {
               <span>المواد الدراسية</span>
             </a>
             <a
-              href="/curriculum"
+              href="#/curriculum"
               className={`sidebar-item sub ${activePage === 'curriculum' ? 'active' : ''}`}
               onClick={(e) => navigateTo('curriculum', e)}
             >
@@ -416,7 +419,7 @@ export default function App() {
               <span>المنهج الدراسي</span>
             </a>
             <a
-              href="/questions"
+              href="#/questions"
               className={`sidebar-item sub ${activePage === 'questions' ? 'active' : ''}`}
               onClick={(e) => navigateTo('questions', e)}
             >
@@ -424,7 +427,7 @@ export default function App() {
               <span>بنك الأسئلة</span>
             </a>
             <a
-              href="/calendar"
+              href="#/calendar"
               className={`sidebar-item sub ${activePage === 'calendar' ? 'active' : ''}`}
               onClick={(e) => navigateTo('calendar', e)}
             >
@@ -450,7 +453,7 @@ export default function App() {
             }}
           >
             <a
-              href="/users"
+              href="#/users"
               className={`sidebar-item sub ${activePage === 'users' ? 'active' : ''}`}
               onClick={(e) => navigateTo('users', e)}
             >
@@ -458,7 +461,7 @@ export default function App() {
               <span>المستخدمون</span>
             </a>
             <a
-              href="/subscriptions"
+              href="#/subscriptions"
               className={`sidebar-item sub ${activePage === 'subscriptions' ? 'active' : ''}`}
               onClick={(e) => navigateTo('subscriptions', e)}
             >
@@ -484,7 +487,7 @@ export default function App() {
             }}
           >
             <a
-              href="/rewards"
+              href="#/rewards"
               className={`sidebar-item sub ${activePage === 'rewards' ? 'active' : ''}`}
               onClick={(e) => navigateTo('rewards', e)}
             >
@@ -492,7 +495,7 @@ export default function App() {
               <span>الإنجازات والمكافآت</span>
             </a>
             <a
-              href="/notif-templates"
+              href="#/notif-templates"
               className={`sidebar-item sub ${activePage === 'notif-templates' ? 'active' : ''}`}
               onClick={(e) => navigateTo('notif-templates', e)}
             >
@@ -518,7 +521,7 @@ export default function App() {
             }}
           >
             <a
-              href="/ai-safety"
+              href="#/ai-safety"
               className={`sidebar-item sub ${activePage === 'ai-safety' ? 'active' : ''}`}
               onClick={(e) => navigateTo('ai-safety', e)}
             >
@@ -544,7 +547,7 @@ export default function App() {
             }}
           >
             <a
-              href="/roles"
+              href="#/roles"
               className={`sidebar-item sub ${activePage === 'roles' ? 'active' : ''}`}
               onClick={(e) => navigateTo('roles', e)}
             >
@@ -552,7 +555,7 @@ export default function App() {
               <span>الأدوار والصلاحيات</span>
             </a>
             <a
-              href="/settings"
+              href="#/settings"
               className={`sidebar-item sub ${activePage === 'settings' ? 'active' : ''}`}
               onClick={(e) => navigateTo('settings', e)}
             >
@@ -578,7 +581,7 @@ export default function App() {
             }}
           >
             <a
-              href="/analytics"
+              href="#/analytics"
               className={`sidebar-item sub ${activePage === 'analytics' ? 'active' : ''}`}
               onClick={(e) => navigateTo('analytics', e)}
             >
@@ -604,7 +607,7 @@ export default function App() {
             }}
           >
             <a
-              href="/companion-catalog"
+              href="#/companion-catalog"
               className={`sidebar-item sub ${activePage === 'companion-catalog' ? 'active' : ''}`}
               onClick={(e) => navigateTo('companion-catalog', e)}
             >
@@ -630,7 +633,7 @@ export default function App() {
             }}
           >
             <a
-              href="/design-system"
+              href="#/design-system"
               className={`sidebar-item sub ${activePage === 'design-system' ? 'active' : ''}`}
               onClick={(e) => navigateTo('design-system', e)}
             >
@@ -641,7 +644,7 @@ export default function App() {
         </div>
 
         <a
-          href="/feedback"
+          href="#/feedback"
           className={`sidebar-item bottom ${activePage === 'feedback' ? 'active' : ''}`}
           onClick={(e) => navigateTo('feedback', e)}
         >
@@ -967,7 +970,9 @@ export default function App() {
 
         {/* مساحة المحتوى */}
         <div className="admin-content">
-          {activePage === 'users' ? (
+          {activePage === 'dashboard' ? (
+            <DashboardPage onNavigate={(p) => navigateTo(p)} />
+          ) : activePage === 'users' ? (
             <UsersPage
               onSubScreenChange={(isSub, title) => {
                 setIsSubScreen(isSub);
