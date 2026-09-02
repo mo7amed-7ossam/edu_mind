@@ -1,14 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
+import { Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { SubscriptionsPage } from './components/SubscriptionsPage';
 import { UsersPage } from './components/UsersPage';
 import { AcademicCalendarPage } from './components/AcademicCalendarPage';
 import { CountriesPage } from './components/CountriesPage';
+import { DashboardPage } from './components/DashboardPage';
+import { SectionPlaceholderPage } from './components/SectionPlaceholderPage';
 
 export default function App() {
-  const [activePage, setActivePage] = useState<string>('users');
+  const location = useLocation();
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     users: true,
     foundation: true,
+    motivation: false,
+    ai: false,
+    governance: false,
+    reports: false,
+    companion: false,
+    system: false,
   });
 
   const [isNotifOpen, setIsNotifOpen] = useState<boolean>(false);
@@ -86,6 +96,32 @@ export default function App() {
     };
   }, []);
 
+  // فتح المجموعة المناسبة تلقائياً حسب المسار وإعادة تعيين الشاشة الفرعية
+  useEffect(() => {
+    const path = location.pathname;
+    if (['/countries', '/classes', '/subjects', '/curriculum', '/questions', '/calendar', '/academic-calendar'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, foundation: true }));
+    } else if (['/users', '/subscriptions'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, users: true }));
+    } else if (['/rewards', '/notif-templates'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, motivation: true }));
+    } else if (['/ai-safety'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, ai: true }));
+    } else if (['/roles', '/settings'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, governance: true }));
+    } else if (['/analytics'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, reports: true }));
+    } else if (['/companion-catalog'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, companion: true }));
+    } else if (['/design-system'].includes(path)) {
+      setOpenGroups((prev) => ({ ...prev, system: true }));
+    }
+
+    setIsSubScreen(false);
+    setSubScreenTitle('');
+    backHandlerRef.current = null;
+  }, [location.pathname]);
+
   const toggleGroup = (groupName: string) => {
     setOpenGroups((prev) => ({
       ...prev,
@@ -93,36 +129,97 @@ export default function App() {
     }));
   };
 
-  const handlePageSelect = (page: string) => {
-    setActivePage(page);
-    setIsSubScreen(false);
-    setSubScreenTitle('');
-    backHandlerRef.current = null;
-  };
-
   const getPageDetails = () => {
-    switch (activePage) {
-      case 'users':
+    const path = location.pathname;
+    switch (path) {
+      case '/users':
         return {
           title: 'المستخدمون',
           crumb: 'المستخدمون / أولياء الأمور والطلاب',
         };
-      case 'subscriptions':
+      case '/subscriptions':
         return {
           title: 'الاشتراكات والخطط',
           crumb: 'المستخدمون / الاشتراكات والخطط',
         };
-      case 'countries':
+      case '/countries':
         return {
           title: 'الدول',
           crumb: 'الإعداد التأسيسي / الدول',
         };
-      case 'calendar':
+      case '/classes':
+        return {
+          title: 'الصفوف الدراسية',
+          crumb: 'الإعداد التأسيسي / الصفوف الدراسية',
+        };
+      case '/subjects':
+        return {
+          title: 'المواد الدراسية',
+          crumb: 'الإعداد التأسيسي / المواد الدراسية',
+        };
+      case '/curriculum':
+        return {
+          title: 'المنهج الدراسي',
+          crumb: 'الإعداد التأسيسي / المنهج الدراسي',
+        };
+      case '/questions':
+        return {
+          title: 'بنك الأسئلة',
+          crumb: 'الإعداد التأسيسي / بنك الأسئلة',
+        };
+      case '/calendar':
+      case '/academic-calendar':
         return {
           title: 'التقويم الأكاديمي',
           crumb: 'البيانات الأساسية / التقويم الأكاديمي',
         };
-      case 'dashboard':
+      case '/rewards':
+        return {
+          title: 'الإنجازات والمكافآت',
+          crumb: 'التحفيز والإشعارات / الإنجازات والمكافآت',
+        };
+      case '/notif-templates':
+        return {
+          title: 'قوالب الإشعارات',
+          crumb: 'التحفيز والإشعارات / قوالب الإشعارات',
+        };
+      case '/ai-safety':
+        return {
+          title: 'المساعد الذكي والسلامة',
+          crumb: 'الذكاء الاصطناعي والسلامة / المساعد الذكي والسلامة',
+        };
+      case '/roles':
+        return {
+          title: 'الأدوار والصلاحيات',
+          crumb: 'الحوكمة / الأدوار والصلاحيات',
+        };
+      case '/settings':
+        return {
+          title: 'الإعدادات العامة',
+          crumb: 'الحوكمة / الإعدادات العامة',
+        };
+      case '/analytics':
+        return {
+          title: 'التقارير والتحليلات',
+          crumb: 'التقارير / التقارير والتحليلات',
+        };
+      case '/companion-catalog':
+        return {
+          title: 'كتالوج الرفيق التعليمي',
+          crumb: 'الرفيق التعليمي / كتالوج الرفيق التعليمي',
+        };
+      case '/design-system':
+        return {
+          title: 'نظام التصميم',
+          crumb: 'النظام / نظام التصميم',
+        };
+      case '/feedback':
+        return {
+          title: 'الملاحظات والدعم',
+          crumb: 'النظام / الملاحظات والدعم',
+        };
+      case '/dashboard':
+      case '/':
         return {
           title: 'لوحة التحكم',
           crumb: 'الرئيسية',
@@ -154,13 +251,13 @@ export default function App() {
           <span>لوحة إدارة المنصة</span>
         </div>
 
-        <div
-          className={`sidebar-item ${activePage === 'dashboard' ? 'active' : ''}`}
-          onClick={() => handlePageSelect('dashboard')}
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) => `sidebar-item ${isActive || location.pathname === '/' ? 'active' : ''}`}
         >
           <span className="ic">🏠</span>
           <span>لوحة التحكم</span>
-        </div>
+        </NavLink>
 
         <div>
           <div
@@ -177,30 +274,48 @@ export default function App() {
               opacity: openGroups['foundation'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'countries' ? 'active' : ''}`} onClick={() => handlePageSelect('countries')}>
+            <NavLink
+              to="/countries"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🌍</span>
               <span>الدول</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'classes' ? 'active' : ''}`} onClick={() => handlePageSelect('classes')}>
+            </NavLink>
+            <NavLink
+              to="/classes"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🏫</span>
               <span>الصفوف الدراسية</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'subjects' ? 'active' : ''}`} onClick={() => handlePageSelect('subjects')}>
+            </NavLink>
+            <NavLink
+              to="/subjects"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">📚</span>
               <span>المواد الدراسية</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'curriculum' ? 'active' : ''}`} onClick={() => handlePageSelect('curriculum')}>
+            </NavLink>
+            <NavLink
+              to="/curriculum"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🌳</span>
               <span>المنهج الدراسي</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'questions' ? 'active' : ''}`} onClick={() => handlePageSelect('questions')}>
+            </NavLink>
+            <NavLink
+              to="/questions"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">❓</span>
               <span>بنك الأسئلة</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'calendar' ? 'active' : ''}`} onClick={() => handlePageSelect('calendar')}>
+            </NavLink>
+            <NavLink
+              to="/calendar"
+              className={({ isActive }) => `sidebar-item sub ${isActive || location.pathname === '/academic-calendar' ? 'active' : ''}`}
+            >
               <span className="ic">📅</span>
               <span>التقويم الأكاديمي</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -219,17 +334,20 @@ export default function App() {
               opacity: openGroups['users'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'users' ? 'active' : ''}`} onClick={() => handlePageSelect('users')}>
+            <NavLink
+              to="/users"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">👥</span>
               <span>المستخدمون</span>
-            </div>
-            <div
-              className={`sidebar-item sub ${activePage === 'subscriptions' ? 'active' : ''}`}
-              onClick={() => handlePageSelect('subscriptions')}
+            </NavLink>
+            <NavLink
+              to="/subscriptions"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
             >
               <span className="ic">💳</span>
               <span>الاشتراكات والخطط</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -248,14 +366,20 @@ export default function App() {
               opacity: openGroups['motivation'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'rewards' ? 'active' : ''}`} onClick={() => handlePageSelect('rewards')}>
+            <NavLink
+              to="/rewards"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🏆</span>
               <span>الإنجازات والمكافآت</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'notif-templates' ? 'active' : ''}`} onClick={() => handlePageSelect('notif-templates')}>
+            </NavLink>
+            <NavLink
+              to="/notif-templates"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🔔</span>
               <span>قوالب الإشعارات</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -274,10 +398,13 @@ export default function App() {
               opacity: openGroups['ai'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'ai-safety' ? 'active' : ''}`} onClick={() => handlePageSelect('ai-safety')}>
+            <NavLink
+              to="/ai-safety"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🛡️</span>
               <span>المساعد الذكي والسلامة</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -296,14 +423,20 @@ export default function App() {
               opacity: openGroups['governance'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'roles' ? 'active' : ''}`} onClick={() => handlePageSelect('roles')}>
+            <NavLink
+              to="/roles"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🔐</span>
               <span>الأدوار والصلاحيات</span>
-            </div>
-            <div className={`sidebar-item sub ${activePage === 'settings' ? 'active' : ''}`} onClick={() => handlePageSelect('settings')}>
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">⚙️</span>
               <span>الإعدادات العامة</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -322,10 +455,13 @@ export default function App() {
               opacity: openGroups['reports'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'analytics' ? 'active' : ''}`} onClick={() => handlePageSelect('analytics')}>
+            <NavLink
+              to="/analytics"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">📊</span>
               <span>التقارير والتحليلات</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -344,10 +480,13 @@ export default function App() {
               opacity: openGroups['companion'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'companion-catalog' ? 'active' : ''}`} onClick={() => handlePageSelect('companion-catalog')}>
+            <NavLink
+              to="/companion-catalog"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🧸</span>
               <span>كتالوج الرفيق التعليمي</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
@@ -366,20 +505,23 @@ export default function App() {
               opacity: openGroups['system'] ? 1 : 0,
             }}
           >
-            <div className={`sidebar-item sub ${activePage === 'design-system' ? 'active' : ''}`} onClick={() => handlePageSelect('design-system')}>
+            <NavLink
+              to="/design-system"
+              className={({ isActive }) => `sidebar-item sub ${isActive ? 'active' : ''}`}
+            >
               <span className="ic">🎨</span>
               <span>نظام التصميم</span>
-            </div>
+            </NavLink>
           </div>
         </div>
 
-        <div
-          className={`sidebar-item bottom ${activePage === 'feedback' ? 'active' : ''}`}
-          onClick={() => handlePageSelect('feedback')}
+        <NavLink
+          to="/feedback"
+          className={({ isActive }) => `sidebar-item bottom ${isActive ? 'active' : ''}`}
         >
           <span className="ic">💬</span>
           <span>مراجعة آراء أولياء الأمور</span>
-        </div>
+        </NavLink>
       </div>
 
       {/* المحتوى الرئيسي و الهيدر */}
@@ -699,35 +841,185 @@ export default function App() {
 
         {/* مساحة المحتوى */}
         <div className="admin-content">
-          {activePage === 'users' ? (
-            <UsersPage
-              onSubScreenChange={(isSub, title) => {
-                setIsSubScreen(isSub);
-                setSubScreenTitle(title || '');
-              }}
-              onBackRequest={(fn) => {
-                backHandlerRef.current = fn;
-              }}
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route
+              path="/users"
+              element={
+                <UsersPage
+                  onSubScreenChange={(isSub, title) => {
+                    setIsSubScreen(isSub);
+                    setSubScreenTitle(title || '');
+                  }}
+                  onBackRequest={(fn) => {
+                    backHandlerRef.current = fn;
+                  }}
+                />
+              }
             />
-          ) : activePage === 'subscriptions' ? (
-            <SubscriptionsPage />
-          ) : activePage === 'calendar' ? (
-            <AcademicCalendarPage
-              onSubScreenChange={(isSub, title) => {
-                setIsSubScreen(isSub);
-                setSubScreenTitle(title || '');
-              }}
-              onBackRequest={(fn) => {
-                backHandlerRef.current = fn;
-              }}
+            <Route path="/subscriptions" element={<SubscriptionsPage />} />
+            <Route path="/countries" element={<CountriesPage />} />
+            <Route
+              path="/calendar"
+              element={
+                <AcademicCalendarPage
+                  onSubScreenChange={(isSub, title) => {
+                    setIsSubScreen(isSub);
+                    setSubScreenTitle(title || '');
+                  }}
+                  onBackRequest={(fn) => {
+                    backHandlerRef.current = fn;
+                  }}
+                />
+              }
             />
-          ) : activePage === 'countries' ? (
-            <CountriesPage />
-          ) : (
-            <div className="admin-panel text-center py-12 text-[#5A6472]">
-              الصفحة قيد التطوير
-            </div>
-          )}
+            <Route
+              path="/academic-calendar"
+              element={
+                <AcademicCalendarPage
+                  onSubScreenChange={(isSub, title) => {
+                    setIsSubScreen(isSub);
+                    setSubScreenTitle(title || '');
+                  }}
+                  onBackRequest={(fn) => {
+                    backHandlerRef.current = fn;
+                  }}
+                />
+              }
+            />
+            <Route
+              path="/classes"
+              element={
+                <SectionPlaceholderPage
+                  title="الصفوف الدراسية"
+                  category="الإعداد التأسيسي"
+                  description="إدارة وتحديد المراحل والصفوف الدراسية وتوزيع المناهج عليها"
+                />
+              }
+            />
+            <Route
+              path="/subjects"
+              element={
+                <SectionPlaceholderPage
+                  title="المواد الدراسية"
+                  category="الإعداد التأسيسي"
+                  description="إدارة المقررات والمواد الدراسية ونواتج التعلم لكل مرحلة"
+                />
+              }
+            />
+            <Route
+              path="/curriculum"
+              element={
+                <SectionPlaceholderPage
+                  title="المنهج الدراسي"
+                  category="الإعداد التأسيسي"
+                  description="هيكلة شجرة الوحدات التعليمية والدروس وربطها بالسنوات الأكاديمية"
+                />
+              }
+            />
+            <Route
+              path="/questions"
+              element={
+                <SectionPlaceholderPage
+                  title="بنك الأسئلة"
+                  category="الإعداد التأسيسي"
+                  description="إدارة وتصنيف بنك الأسئلة الشامل والاختبارات التفاعلية والتقييمات"
+                />
+              }
+            />
+            <Route
+              path="/rewards"
+              element={
+                <SectionPlaceholderPage
+                  title="الإنجازات والمكافآت"
+                  category="التحفيز والإشعارات"
+                  description="إدارة الأوسمة ومحفزات النقاط ولوحات الشرف للطلاب"
+                />
+              }
+            />
+            <Route
+              path="/notif-templates"
+              element={
+                <SectionPlaceholderPage
+                  title="قوالب الإشعارات"
+                  category="التحفيز والإشعارات"
+                  description="إدارة وصياغة قوالب الرسائل والإشعارات التلقائية لأولياء الأمور"
+                />
+              }
+            />
+            <Route
+              path="/ai-safety"
+              element={
+                <SectionPlaceholderPage
+                  title="المساعد الذكي والسلامة"
+                  category="الذكاء الاصطناعي والسلامة"
+                  description="سياسات السلامة وحوكمة إجابات المساعد الذكي وفلاتر الأمان"
+                />
+              }
+            />
+            <Route
+              path="/roles"
+              element={
+                <SectionPlaceholderPage
+                  title="الأدوار والصلاحيات"
+                  category="الحوكمة"
+                  description="تعريف الأدوار الوظيفية وصلاحيات المشرفين ومديري النظام"
+                />
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <SectionPlaceholderPage
+                  title="الإعدادات العامة"
+                  category="الحوكمة"
+                  description="تهيئة إعدادات المنصة الأساسية ووسائل الدفع والاتصال"
+                />
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <SectionPlaceholderPage
+                  title="التقارير والتحليلات"
+                  category="التقارير"
+                  description="متابعة نمو الاشتراكات وتفاعل الطلاب والإحصاءات المتقدمة"
+                />
+              }
+            />
+            <Route
+              path="/companion-catalog"
+              element={
+                <SectionPlaceholderPage
+                  title="كتالوج الرفيق التعليمي"
+                  category="الرفيق التعليمي"
+                  description="إدارة وتخصيص شخصيات وأصوات الرفيق التعليمي للطلاب"
+                />
+              }
+            />
+            <Route
+              path="/design-system"
+              element={
+                <SectionPlaceholderPage
+                  title="نظام التصميم"
+                  category="النظام"
+                  description="الدليل الإرشادي الموحد للألوان والمكونات وواجهات الاستخدام"
+                />
+              }
+            />
+            <Route
+              path="/feedback"
+              element={
+                <SectionPlaceholderPage
+                  title="مراجعة آراء أولياء الأمور"
+                  category="النظام"
+                  description="متابعة تذاكر الدعم الفني وتقييمات أولياء الأمور والطلاب"
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/calendar" replace />} />
+          </Routes>
         </div>
       </div>
     </div>

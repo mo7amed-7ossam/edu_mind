@@ -734,7 +734,7 @@ export const AcademicCalendarPage: React.FC<AcademicCalendarPageProps> = ({
                     value={holidayFrom}
                     onChange={(e) => setHolidayFrom(e.target.value)}
                     placeholder="09-23"
-                    className="admin-input h-9 text-[11.5px] font-latin font-bold text-center"
+                    className="admin-input h-9 text-[11.5px] font-latin font-bold text-right"
                   />
                 </div>
                 <div>
@@ -746,7 +746,7 @@ export const AcademicCalendarPage: React.FC<AcademicCalendarPageProps> = ({
                     value={holidayTo}
                     onChange={(e) => setHolidayTo(e.target.value)}
                     placeholder="09-23"
-                    className="admin-input h-9 text-[11.5px] font-latin font-bold text-center"
+                    className="admin-input h-9 text-[11.5px] font-latin font-bold text-right"
                   />
                 </div>
               </div>
