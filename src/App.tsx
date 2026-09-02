@@ -1,83 +1,14 @@
-import { useState, useRef, useEffect, MouseEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SubscriptionsPage } from './components/SubscriptionsPage';
 import { UsersPage } from './components/UsersPage';
 import { AcademicCalendarPage } from './components/AcademicCalendarPage';
 import { CountriesPage } from './components/CountriesPage';
-import { DashboardPage } from './components/DashboardPage';
-
-const PAGE_GROUP_MAP: Record<string, string> = {
-  countries: 'foundation',
-  classes: 'foundation',
-  subjects: 'foundation',
-  curriculum: 'foundation',
-  questions: 'foundation',
-  calendar: 'foundation',
-  users: 'users',
-  subscriptions: 'users',
-  rewards: 'motivation',
-  'notif-templates': 'motivation',
-  'ai-safety': 'ai',
-  roles: 'governance',
-  settings: 'governance',
-  analytics: 'reports',
-  'companion-catalog': 'companion',
-  'design-system': 'system',
-  dashboard: 'dashboard',
-  feedback: 'feedback',
-};
-
-function getPageFromUrl(): string {
-  if (typeof window === 'undefined') return 'dashboard';
-
-  // 1. فحص معلمة الاستعلام ?page=...
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pageParam = urlParams.get('page');
-    if (pageParam && PAGE_GROUP_MAP[pageParam]) {
-      return pageParam;
-    }
-  } catch {
-    // ignore
-  }
-
-  // 2. فحص الهاش #/page أو #page
-  const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-  if (hash && PAGE_GROUP_MAP[hash]) {
-    return hash;
-  }
-
-  // 3. فحص المسار /page المباشر
-  const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('?')[0];
-  if (path && PAGE_GROUP_MAP[path]) {
-    return path;
-  }
-
-  // 4. استرجاع آخر صفحة كان يعمل عليها المستخدم من localStorage لمنع إجباره على المستخدمين عند حفظ الكود
-  try {
-    const saved = localStorage.getItem('admin_active_page');
-    if (saved && PAGE_GROUP_MAP[saved]) {
-      return saved;
-    }
-  } catch {
-    // ignore
-  }
-
-  return 'dashboard';
-}
 
 export default function App() {
-  const [activePage, setActivePage] = useState<string>(() => getPageFromUrl());
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    const initialPage = getPageFromUrl();
-    const defaults: Record<string, boolean> = {
-      users: true,
-      foundation: true,
-    };
-    const matchedGroup = PAGE_GROUP_MAP[initialPage];
-    if (matchedGroup && matchedGroup !== 'dashboard' && matchedGroup !== 'feedback') {
-      defaults[matchedGroup] = true;
-    }
-    return defaults;
+  const [activePage, setActivePage] = useState<string>('users');
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    users: true,
+    foundation: true,
   });
 
   const [isNotifOpen, setIsNotifOpen] = useState<boolean>(false);
@@ -141,7 +72,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: globalThis.MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
       }
@@ -155,44 +86,6 @@ export default function App() {
     };
   }, []);
 
-  // المزامنة مع أزرار الرجوع والتنقل بالمتصفح والهاش
-  useEffect(() => {
-    const handleUrlChange = () => {
-      const page = getPageFromUrl();
-      setActivePage(page);
-      const matchedGroup = PAGE_GROUP_MAP[page];
-      if (matchedGroup && matchedGroup !== 'dashboard' && matchedGroup !== 'feedback') {
-        setOpenGroups((prev) => ({
-          ...prev,
-          [matchedGroup]: true,
-        }));
-      }
-      setIsSubScreen(false);
-      setSubScreenTitle('');
-      backHandlerRef.current = null;
-    };
-
-    window.addEventListener('popstate', handleUrlChange);
-    window.addEventListener('hashchange', handleUrlChange);
-    return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-      window.removeEventListener('hashchange', handleUrlChange);
-    };
-  }, []);
-
-  // حفظ الصفحة الحالية في التخزين المحلي وتحديث شريط عنوان المتصفح فوراً
-  useEffect(() => {
-    try {
-      localStorage.setItem('admin_active_page', activePage);
-    } catch {
-      // ignore
-    }
-    const currentHash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-    if (currentHash !== activePage) {
-      window.location.hash = `#/${activePage}`;
-    }
-  }, [activePage]);
-
   const toggleGroup = (groupName: string) => {
     setOpenGroups((prev) => ({
       ...prev,
@@ -202,41 +95,9 @@ export default function App() {
 
   const handlePageSelect = (page: string) => {
     setActivePage(page);
-    try {
-      localStorage.setItem('admin_active_page', page);
-    } catch {
-      // ignore
-    }
-    const matchedGroup = PAGE_GROUP_MAP[page];
-    if (matchedGroup && matchedGroup !== 'dashboard' && matchedGroup !== 'feedback') {
-      setOpenGroups((prev) => ({
-        ...prev,
-        [matchedGroup]: true,
-      }));
-    }
     setIsSubScreen(false);
     setSubScreenTitle('');
     backHandlerRef.current = null;
-  };
-
-  // التنقل مع تغيير الرابط في المتصفح ودعم الفتح في لسان جديد
-  const navigateTo = (page: string, e?: MouseEvent) => {
-    if (e) {
-      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.button === 0) {
-        e.preventDefault();
-        const targetHash = `#/${page}`;
-        if (window.location.hash !== targetHash) {
-          window.location.hash = targetHash;
-        }
-        handlePageSelect(page);
-      }
-    } else {
-      const targetHash = `#/${page}`;
-      if (window.location.hash !== targetHash) {
-        window.location.hash = targetHash;
-      }
-      handlePageSelect(page);
-    }
   };
 
   const getPageDetails = () => {
@@ -256,26 +117,6 @@ export default function App() {
           title: 'الدول',
           crumb: 'الإعداد التأسيسي / الدول',
         };
-      case 'classes':
-        return {
-          title: 'الصفوف الدراسية',
-          crumb: 'الإعداد التأسيسي / الصفوف الدراسية',
-        };
-      case 'subjects':
-        return {
-          title: 'المواد الدراسية',
-          crumb: 'الإعداد التأسيسي / المواد الدراسية',
-        };
-      case 'curriculum':
-        return {
-          title: 'المنهج الدراسي',
-          crumb: 'الإعداد التأسيسي / المنهج الدراسي',
-        };
-      case 'questions':
-        return {
-          title: 'بنك الأسئلة',
-          crumb: 'الإعداد التأسيسي / بنك الأسئلة',
-        };
       case 'calendar':
         return {
           title: 'التقويم الأكاديمي',
@@ -285,51 +126,6 @@ export default function App() {
         return {
           title: 'لوحة التحكم',
           crumb: 'الرئيسية',
-        };
-      case 'rewards':
-        return {
-          title: 'الإنجازات والمكافآت',
-          crumb: 'التحفيز والإشعارات / الإنجازات والمكافآت',
-        };
-      case 'notif-templates':
-        return {
-          title: 'قوالب الإشعارات',
-          crumb: 'التحفيز والإشعارات / قوالب الإشعارات',
-        };
-      case 'ai-safety':
-        return {
-          title: 'المساعد الذكي والسلامة',
-          crumb: 'الذكاء الاصطناعي والسلامة / المساعد الذكي والسلامة',
-        };
-      case 'roles':
-        return {
-          title: 'الأدوار والصلاحيات',
-          crumb: 'الحوكمة / الأدوار والصلاحيات',
-        };
-      case 'settings':
-        return {
-          title: 'الإعدادات العامة',
-          crumb: 'الحوكمة / الإعدادات العامة',
-        };
-      case 'analytics':
-        return {
-          title: 'التقارير والتحليلات',
-          crumb: 'التقارير / التقارير والتحليلات',
-        };
-      case 'companion-catalog':
-        return {
-          title: 'كتالوج الرفيق التعليمي',
-          crumb: 'الرفيق التعليمي / كتالوج الرفيق التعليمي',
-        };
-      case 'design-system':
-        return {
-          title: 'نظام التصميم',
-          crumb: 'النظام / نظام التصميم',
-        };
-      case 'feedback':
-        return {
-          title: 'مراجعة آراء أولياء الأمور',
-          crumb: 'مراجعة آراء أولياء الأمور',
         };
       default:
         return {
@@ -353,23 +149,18 @@ export default function App() {
     <div className="admin-container">
       {/* السايد بار */}
       <div className="admin-sidebar">
-        <a
-          href="#/dashboard"
-          className="sidebar-brand no-underline text-inherit"
-          onClick={(e) => navigateTo('dashboard', e)}
-        >
+        <div className="sidebar-brand">
           <span>🎓</span>
           <span>لوحة إدارة المنصة</span>
-        </a>
+        </div>
 
-        <a
-          href="#/dashboard"
+        <div
           className={`sidebar-item ${activePage === 'dashboard' ? 'active' : ''}`}
-          onClick={(e) => navigateTo('dashboard', e)}
+          onClick={() => handlePageSelect('dashboard')}
         >
           <span className="ic">🏠</span>
           <span>لوحة التحكم</span>
-        </a>
+        </div>
 
         <div>
           <div
@@ -386,54 +177,30 @@ export default function App() {
               opacity: openGroups['foundation'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/countries"
-              className={`sidebar-item sub ${activePage === 'countries' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('countries', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'countries' ? 'active' : ''}`} onClick={() => handlePageSelect('countries')}>
               <span className="ic">🌍</span>
               <span>الدول</span>
-            </a>
-            <a
-              href="#/classes"
-              className={`sidebar-item sub ${activePage === 'classes' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('classes', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'classes' ? 'active' : ''}`} onClick={() => handlePageSelect('classes')}>
               <span className="ic">🏫</span>
               <span>الصفوف الدراسية</span>
-            </a>
-            <a
-              href="#/subjects"
-              className={`sidebar-item sub ${activePage === 'subjects' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('subjects', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'subjects' ? 'active' : ''}`} onClick={() => handlePageSelect('subjects')}>
               <span className="ic">📚</span>
               <span>المواد الدراسية</span>
-            </a>
-            <a
-              href="#/curriculum"
-              className={`sidebar-item sub ${activePage === 'curriculum' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('curriculum', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'curriculum' ? 'active' : ''}`} onClick={() => handlePageSelect('curriculum')}>
               <span className="ic">🌳</span>
               <span>المنهج الدراسي</span>
-            </a>
-            <a
-              href="#/questions"
-              className={`sidebar-item sub ${activePage === 'questions' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('questions', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'questions' ? 'active' : ''}`} onClick={() => handlePageSelect('questions')}>
               <span className="ic">❓</span>
               <span>بنك الأسئلة</span>
-            </a>
-            <a
-              href="#/calendar"
-              className={`sidebar-item sub ${activePage === 'calendar' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('calendar', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'calendar' ? 'active' : ''}`} onClick={() => handlePageSelect('calendar')}>
               <span className="ic">📅</span>
               <span>التقويم الأكاديمي</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -452,22 +219,17 @@ export default function App() {
               opacity: openGroups['users'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/users"
-              className={`sidebar-item sub ${activePage === 'users' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('users', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'users' ? 'active' : ''}`} onClick={() => handlePageSelect('users')}>
               <span className="ic">👥</span>
               <span>المستخدمون</span>
-            </a>
-            <a
-              href="#/subscriptions"
+            </div>
+            <div
               className={`sidebar-item sub ${activePage === 'subscriptions' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('subscriptions', e)}
+              onClick={() => handlePageSelect('subscriptions')}
             >
               <span className="ic">💳</span>
               <span>الاشتراكات والخطط</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -486,22 +248,14 @@ export default function App() {
               opacity: openGroups['motivation'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/rewards"
-              className={`sidebar-item sub ${activePage === 'rewards' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('rewards', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'rewards' ? 'active' : ''}`} onClick={() => handlePageSelect('rewards')}>
               <span className="ic">🏆</span>
               <span>الإنجازات والمكافآت</span>
-            </a>
-            <a
-              href="#/notif-templates"
-              className={`sidebar-item sub ${activePage === 'notif-templates' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('notif-templates', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'notif-templates' ? 'active' : ''}`} onClick={() => handlePageSelect('notif-templates')}>
               <span className="ic">🔔</span>
               <span>قوالب الإشعارات</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -520,14 +274,10 @@ export default function App() {
               opacity: openGroups['ai'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/ai-safety"
-              className={`sidebar-item sub ${activePage === 'ai-safety' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('ai-safety', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'ai-safety' ? 'active' : ''}`} onClick={() => handlePageSelect('ai-safety')}>
               <span className="ic">🛡️</span>
               <span>المساعد الذكي والسلامة</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -546,22 +296,14 @@ export default function App() {
               opacity: openGroups['governance'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/roles"
-              className={`sidebar-item sub ${activePage === 'roles' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('roles', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'roles' ? 'active' : ''}`} onClick={() => handlePageSelect('roles')}>
               <span className="ic">🔐</span>
               <span>الأدوار والصلاحيات</span>
-            </a>
-            <a
-              href="#/settings"
-              className={`sidebar-item sub ${activePage === 'settings' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('settings', e)}
-            >
+            </div>
+            <div className={`sidebar-item sub ${activePage === 'settings' ? 'active' : ''}`} onClick={() => handlePageSelect('settings')}>
               <span className="ic">⚙️</span>
               <span>الإعدادات العامة</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -580,14 +322,10 @@ export default function App() {
               opacity: openGroups['reports'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/analytics"
-              className={`sidebar-item sub ${activePage === 'analytics' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('analytics', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'analytics' ? 'active' : ''}`} onClick={() => handlePageSelect('analytics')}>
               <span className="ic">📊</span>
               <span>التقارير والتحليلات</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -606,14 +344,10 @@ export default function App() {
               opacity: openGroups['companion'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/companion-catalog"
-              className={`sidebar-item sub ${activePage === 'companion-catalog' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('companion-catalog', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'companion-catalog' ? 'active' : ''}`} onClick={() => handlePageSelect('companion-catalog')}>
               <span className="ic">🧸</span>
               <span>كتالوج الرفيق التعليمي</span>
-            </a>
+            </div>
           </div>
         </div>
 
@@ -632,25 +366,20 @@ export default function App() {
               opacity: openGroups['system'] ? 1 : 0,
             }}
           >
-            <a
-              href="#/design-system"
-              className={`sidebar-item sub ${activePage === 'design-system' ? 'active' : ''}`}
-              onClick={(e) => navigateTo('design-system', e)}
-            >
+            <div className={`sidebar-item sub ${activePage === 'design-system' ? 'active' : ''}`} onClick={() => handlePageSelect('design-system')}>
               <span className="ic">🎨</span>
               <span>نظام التصميم</span>
-            </a>
+            </div>
           </div>
         </div>
 
-        <a
-          href="#/feedback"
+        <div
           className={`sidebar-item bottom ${activePage === 'feedback' ? 'active' : ''}`}
-          onClick={(e) => navigateTo('feedback', e)}
+          onClick={() => handlePageSelect('feedback')}
         >
           <span className="ic">💬</span>
           <span>مراجعة آراء أولياء الأمور</span>
-        </a>
+        </div>
       </div>
 
       {/* المحتوى الرئيسي و الهيدر */}
@@ -970,9 +699,7 @@ export default function App() {
 
         {/* مساحة المحتوى */}
         <div className="admin-content">
-          {activePage === 'dashboard' ? (
-            <DashboardPage onNavigate={(p) => navigateTo(p)} />
-          ) : activePage === 'users' ? (
+          {activePage === 'users' ? (
             <UsersPage
               onSubScreenChange={(isSub, title) => {
                 setIsSubScreen(isSub);
