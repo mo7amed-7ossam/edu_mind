@@ -21,19 +21,47 @@ const PAGE_GROUP_MAP: Record<string, string> = {
   analytics: 'reports',
   'companion-catalog': 'companion',
   'design-system': 'system',
+  dashboard: 'dashboard',
+  feedback: 'feedback',
 };
 
 function getPageFromUrl(): string {
-  if (typeof window === 'undefined') return 'users';
+  if (typeof window === 'undefined') return 'dashboard';
+
+  // 1. فحص معلمة الاستعلام ?page=...
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageParam = urlParams.get('page');
+    if (pageParam && PAGE_GROUP_MAP[pageParam]) {
+      return pageParam;
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. فحص الهاش #/page أو #page
   const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-  if (hash) {
-    if (PAGE_GROUP_MAP[hash] || hash === 'dashboard' || hash === 'feedback') return hash;
+  if (hash && PAGE_GROUP_MAP[hash]) {
+    return hash;
   }
+
+  // 3. فحص المسار /page المباشر
   const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('?')[0];
-  if (path) {
-    if (PAGE_GROUP_MAP[path] || path === 'dashboard' || path === 'feedback') return path;
+  if (path && PAGE_GROUP_MAP[path]) {
+    return path;
   }
-  return 'users';
+
+  // 4. استرجاع آخر صفحة كان يعمل عليها المستخدم من localStorage لمنع إجباره على المستخدمين عند حفظ الكود
+  try {
+    const saved = localStorage.getItem('admin_active_page');
+    if (saved && PAGE_GROUP_MAP[saved]) {
+      return saved;
+    }
+  } catch {
+    // ignore
+  }
+
+  return 'calendar';
 }
 
 export default function App() {
@@ -45,7 +73,7 @@ export default function App() {
       foundation: true,
     };
     const matchedGroup = PAGE_GROUP_MAP[initialPage];
-    if (matchedGroup) {
+    if (matchedGroup && matchedGroup !== 'dashboard' && matchedGroup !== 'feedback') {
       defaults[matchedGroup] = true;
     }
     return defaults;
@@ -112,7 +140,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: globalThis.MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
       }
@@ -132,7 +160,7 @@ export default function App() {
       const page = getPageFromUrl();
       setActivePage(page);
       const matchedGroup = PAGE_GROUP_MAP[page];
-      if (matchedGroup) {
+      if (matchedGroup && matchedGroup !== 'dashboard' && matchedGroup !== 'feedback') {
         setOpenGroups((prev) => ({
           ...prev,
           [matchedGroup]: true,
@@ -149,6 +177,19 @@ export default function App() {
     };
   }, []);
 
+  // حفظ الصفحة الحالية في التخزين المحلي وتحديث شريط عنوان المتصفح فوراً
+  useEffect(() => {
+    try {
+      localStorage.setItem('admin_active_page', activePage);
+    } catch {
+      // ignore
+    }
+    const currentPath = window.location.pathname.replace(/^\/+|\/+$/g, '').split('?')[0];
+    if (currentPath !== activePage && window.history.replaceState) {
+      window.history.replaceState({ page: activePage }, '', `/${activePage}`);
+    }
+  }, [activePage]);
+
   const toggleGroup = (groupName: string) => {
     setOpenGroups((prev) => ({
       ...prev,
@@ -158,8 +199,13 @@ export default function App() {
 
   const handlePageSelect = (page: string) => {
     setActivePage(page);
+    try {
+      localStorage.setItem('admin_active_page', page);
+    } catch {
+      // ignore
+    }
     const matchedGroup = PAGE_GROUP_MAP[page];
-    if (matchedGroup) {
+    if (matchedGroup && matchedGroup !== 'dashboard' && matchedGroup !== 'feedback') {
       setOpenGroups((prev) => ({
         ...prev,
         [matchedGroup]: true,
@@ -305,9 +351,9 @@ export default function App() {
       {/* السايد بار */}
       <div className="admin-sidebar">
         <a
-          href="/users"
+          href="/dashboard"
           className="sidebar-brand no-underline text-inherit"
-          onClick={(e) => navigateTo('users', e)}
+          onClick={(e) => navigateTo('dashboard', e)}
         >
           <span>🎓</span>
           <span>لوحة إدارة المنصة</span>
