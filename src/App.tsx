@@ -3,9 +3,18 @@ import { SubscriptionsPage } from './components/SubscriptionsPage';
 import { UsersPage } from './components/UsersPage';
 import { AcademicCalendarPage } from './components/AcademicCalendarPage';
 import { CountriesPage } from './components/CountriesPage';
+import { CurriculumPage } from './components/CurriculumPage';
 
 export default function App() {
-  const [activePage, setActivePage] = useState<string>('users');
+  // قراءة الصفحة المبدئية من عنوان الـ URL (Hash) أو التخزين المحلي لتجنب العودة لـ "المستخدمون" عند الحفظ أو التحديث
+  const [activePage, setActivePage] = useState<string>(() => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash) return hash;
+    const saved = localStorage.getItem('smartlearn_active_page');
+    if (saved) return saved;
+    return 'curriculum';
+  });
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     users: true,
     foundation: true,
@@ -95,47 +104,129 @@ export default function App() {
 
   const handlePageSelect = (page: string) => {
     setActivePage(page);
+    window.location.hash = page;
+    localStorage.setItem('smartlearn_active_page', page);
     setIsSubScreen(false);
     setSubScreenTitle('');
     backHandlerRef.current = null;
   };
 
+  // الاستماع لتغييرات الـ hash بالمتصفح
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash && hash !== activePage) {
+        setActivePage(hash);
+        setIsSubScreen(false);
+        setSubScreenTitle('');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [activePage]);
+
   const getPageDetails = () => {
     switch (activePage) {
-      case 'users':
+      case 'curriculum':
         return {
-          title: 'المستخدمون',
-          crumb: 'المستخدمون / أولياء الأمور والطلاب',
-        };
-      case 'subscriptions':
-        return {
-          title: 'الاشتراكات والخطط',
-          crumb: 'المستخدمون / الاشتراكات والخطط',
+          title: 'المنهج الدراسي',
+          category: 'الإعداد التأسيسي',
         };
       case 'countries':
         return {
           title: 'الدول',
-          crumb: 'الإعداد التأسيسي / الدول',
+          category: 'الإعداد التأسيسي',
+        };
+      case 'classes':
+        return {
+          title: 'الصفوف الدراسية',
+          category: 'الإعداد التأسيسي',
+        };
+      case 'subjects':
+        return {
+          title: 'المواد الدراسية',
+          category: 'الإعداد التأسيسي',
+        };
+      case 'questions':
+        return {
+          title: 'بنك الأسئلة',
+          category: 'الإعداد التأسيسي',
         };
       case 'calendar':
         return {
           title: 'التقويم الأكاديمي',
-          crumb: 'البيانات الأساسية / التقويم الأكاديمي',
+          category: 'الإعداد التأسيسي',
         };
-      case 'dashboard':
-        return {
-          title: 'لوحة التحكم',
-          crumb: 'الرئيسية',
-        };
-      default:
+      case 'users':
         return {
           title: 'المستخدمون',
-          crumb: 'المستخدمون',
+          category: 'إدارة المستخدمين',
+        };
+      case 'subscriptions':
+        return {
+          title: 'الاشتراكات والخطط',
+          category: 'المالية والاشتراكات',
+        };
+      case 'rewards':
+        return {
+          title: 'الإنجازات والمكافآت',
+          category: 'التحفيز والإشعارات',
+        };
+      case 'notif-templates':
+        return {
+          title: 'قوالب الإشعارات',
+          category: 'التحفيز والإشعارات',
+        };
+      case 'ai-safety':
+        return {
+          title: 'المساعد الذكي والسلامة',
+          category: 'الذكاء الاصطناعي',
+        };
+      case 'roles':
+        return {
+          title: 'الأدوار والصلاحيات',
+          category: 'الحوكمة',
+        };
+      case 'settings':
+        return {
+          title: 'الإعدادات العامة',
+          category: 'الحوكمة',
+        };
+      case 'analytics':
+        return {
+          title: 'التقارير والتحليلات',
+          category: 'التقارير',
+        };
+      case 'companion-catalog':
+        return {
+          title: 'كتالوج الرفيق التعليمي',
+          category: 'الرفيق التعليمي',
+        };
+      case 'design-system':
+        return {
+          title: 'نظام التصميم',
+          category: 'النظام',
+        };
+      case 'feedback':
+        return {
+          title: 'مراجعة آراء أولياء الأمور',
+          category: 'التواصل والتقييمات',
+        };
+      case 'dashboard':
+      default:
+        return {
+          title: 'لوحة التحكم',
+          category: 'نظرة عامة',
         };
     }
   };
 
   const pageInfo = getPageDetails();
+
+  // تحديث عنوان الصفحة بالمتصفح ليطابق الشاشة النشطة تماماً
+  useEffect(() => {
+    document.title = `${pageInfo.title} | لوحة إدارة المنصة`;
+  }, [pageInfo.title]);
 
   const handleBackClick = () => {
     if (backHandlerRef.current) {
@@ -388,8 +479,34 @@ export default function App() {
         <div className="admin-topbar">
           <div>
             <div className="topbar-title">{pageInfo.title}</div>
-            <div className="topbar-crumb">
-              {isSubScreen ? `${pageInfo.crumb} / ${subScreenTitle || 'تفاصيل'}` : pageInfo.crumb}
+            <div className="topbar-crumb flex items-center gap-1.5 text-[10.5px]">
+              <span
+                className="hover:text-[var(--teal)] cursor-pointer transition-colors"
+                onClick={() => handlePageSelect('dashboard')}
+              >
+                الرئيسية
+              </span>
+              <span className="text-[var(--mid)]">/</span>
+              <span className="text-[var(--gray)]">{pageInfo.category}</span>
+              <span className="text-[var(--mid)]">/</span>
+              <span
+                className={`transition-colors ${
+                  !isSubScreen
+                    ? 'font-bold text-[var(--navy)]'
+                    : 'hover:text-[var(--teal)] cursor-pointer text-[var(--gray)]'
+                }`}
+                onClick={() => isSubScreen && handleBackClick()}
+              >
+                {pageInfo.title}
+              </span>
+              {isSubScreen && (
+                <>
+                  <span className="text-[var(--mid)]">/</span>
+                  <span className="font-bold text-[var(--navy)]">
+                    {subScreenTitle || 'تفاصيل'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <div className="topbar-tools" style={{ position: 'relative' }}>
@@ -699,7 +816,17 @@ export default function App() {
 
         {/* مساحة المحتوى */}
         <div className="admin-content">
-          {activePage === 'users' ? (
+          {activePage === 'curriculum' ? (
+            <CurriculumPage
+              onSubScreenChange={(isSub, title) => {
+                setIsSubScreen(isSub);
+                setSubScreenTitle(title || '');
+              }}
+              onBackRequest={(fn) => {
+                backHandlerRef.current = fn;
+              }}
+            />
+          ) : activePage === 'users' ? (
             <UsersPage
               onSubScreenChange={(isSub, title) => {
                 setIsSubScreen(isSub);
