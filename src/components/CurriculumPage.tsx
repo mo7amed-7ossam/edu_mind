@@ -483,7 +483,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
 
   // Modals state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'lesson' | 'unit' | 'group'; id: string; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'lesson' | 'unit' | 'group' | 'attachment'; id: string; name: string } | null>(null);
 
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState<boolean>(false);
   const [newUnitTitle, setNewUnitTitle] = useState<string>('');
@@ -569,6 +569,8 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
           groups: u.groups.filter((g) => g.id !== deleteTarget.id),
         }))
       );
+    } else if (deleteTarget.type === 'attachment') {
+      handleDeleteVideo();
     }
     setIsDeleteModalOpen(false);
     setDeleteTarget(null);
@@ -1296,7 +1298,14 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
-                          onClick={handleDeleteVideo}
+                          onClick={() => {
+                            setDeleteTarget({
+                              type: 'attachment',
+                              id: activeLesson?.id || '',
+                              name: videoFile?.name || (lessonContentType === 'file' ? 'الملف المرفق' : 'الفيديو المرفق'),
+                            });
+                            setIsDeleteModalOpen(true);
+                          }}
                           className="p-1.5 text-[var(--gray)] hover:text-[#E53E3E] hover:bg-[#FFF5F5] rounded-lg transition-colors cursor-pointer"
                           title={lessonContentType === 'file' ? 'حذف الملف' : 'حذف الفيديو'}
                         >
@@ -1472,12 +1481,15 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
               {deleteTarget.type === 'lesson' && `حذف الدرس: ${deleteTarget.name}`}
               {deleteTarget.type === 'unit' && `حذف الوحدة: ${deleteTarget.name}`}
               {deleteTarget.type === 'group' && `حذف المجموعة: ${deleteTarget.name}`}
+              {deleteTarget.type === 'attachment' && `حذف المرفق: ${deleteTarget.name}`}
             </h4>
 
             {/* Alert message box */}
             <div className="w-full p-2.5 rounded-lg bg-[#FFF5F5] border border-[#FED7D7] text-center mb-4">
               <p className="text-[10.8px] leading-relaxed text-[#E53E3E] font-medium m-0">
-                هل أنت متأكد من الحذف؟ سيتم إزالة هذا العنصر وكافة محتوياته فوراً من شجرة المنهج ولا يمكن التراجع.
+                {deleteTarget.type === 'attachment'
+                  ? 'هل أنت متأكد من رغبتك في حذف هذا الملف المرفق من الدرس؟ لن تتمكن من استرجاعه بعد الحذف.'
+                  : 'هل أنت متأكد من الحذف؟ سيتم إزالة هذا العنصر وكافة محتوياته فوراً من شجرة المنهج ولا يمكن التراجع.'}
               </p>
             </div>
 
@@ -1501,6 +1513,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                 {deleteTarget.type === 'lesson' && 'حذف الدرس'}
                 {deleteTarget.type === 'unit' && 'حذف الوحدة'}
                 {deleteTarget.type === 'group' && 'حذف المجموعة'}
+                {deleteTarget.type === 'attachment' && 'حذف المرفق'}
               </button>
             </div>
           </div>

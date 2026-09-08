@@ -4,6 +4,7 @@ import { UsersPage } from './components/UsersPage';
 import { AcademicCalendarPage } from './components/AcademicCalendarPage';
 import { CountriesPage } from './components/CountriesPage';
 import { CurriculumPage } from './components/CurriculumPage';
+import { QuestionBankPage } from './components/QuestionBankPage';
 
 export default function App() {
   // قراءة الصفحة المبدئية من عنوان الـ URL (Hash) أو التخزين المحلي لتجنب العودة لـ "المستخدمون" عند الحفظ أو التحديث
@@ -850,6 +851,16 @@ export default function App() {
             />
           ) : activePage === 'countries' ? (
             <CountriesPage />
+          ) : activePage === 'questions' ? (
+            <QuestionBankPage
+              onSubScreenChange={(isSub, title) => {
+                setIsSubScreen(isSub);
+                setSubScreenTitle(title || '');
+              }}
+              onBackRequest={(fn) => {
+                backHandlerRef.current = fn;
+              }}
+            />
           ) : (
             <div className="admin-panel text-center py-12 text-[#5A6472]">
               الصفحة قيد التطوير
