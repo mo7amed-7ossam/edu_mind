@@ -631,26 +631,30 @@ export const UploadCurriculumModal: React.FC<UploadCurriculumModalProps> = ({
 
         {/* Body */}
         <div className="p-5 flex-1 overflow-y-auto">
-          {/* Scope Info Summary */}
+          {/* Scope Info Summary (الدولة، الصف، الفصل، المادة فقط) */}
           <div className="p-2.5 rounded-lg bg-[#F8FAFC] border border-[var(--border-light)] mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
-            <div className="flex items-center gap-1 font-bold text-[var(--navy)]">
-              <span className="text-[var(--gray)] font-normal">المادة:</span>
-              <span>{currentSubjectName}</span>
-            </div>
-            <div className="flex items-center gap-1 font-bold text-[var(--navy)]">
-              <span className="text-[var(--gray)] font-normal">الصف:</span>
-              <span>{currentGradeName}</span>
-            </div>
+            {/* 1. الدولة */}
             <div className="flex items-center gap-1 font-bold text-[var(--navy)]">
               <span className="text-[var(--gray)] font-normal">الدولة:</span>
               <span>{currentCountryName}</span>
             </div>
+            {/* 2. الصف */}
+            <div className="flex items-center gap-1 font-bold text-[var(--navy)]">
+              <span className="text-[var(--gray)] font-normal">الصف:</span>
+              <span>{currentGradeName}</span>
+            </div>
+            {/* 3. الفصل */}
             {currentSemesterName && (
               <div className="flex items-center gap-1 font-bold text-[var(--navy)]">
                 <span className="text-[var(--gray)] font-normal">الفصل:</span>
                 <span>{currentSemesterName}</span>
               </div>
             )}
+            {/* 4. المادة */}
+            <div className="flex items-center gap-1 font-bold text-[var(--navy)]">
+              <span className="text-[var(--gray)] font-normal">المادة:</span>
+              <span>{currentSubjectName}</span>
+            </div>
           </div>
 
           {step === 'upload' ? (
