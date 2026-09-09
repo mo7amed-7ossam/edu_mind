@@ -31,6 +31,8 @@ interface AiCurriculumModalProps {
   currentSubjectName: string;
   currentGradeName: string;
   currentCountryName: string;
+  currentYearName?: string;
+  currentSemesterName?: string;
 }
 
 interface ChatMessage {
@@ -48,6 +50,8 @@ export const AiCurriculumModal: React.FC<AiCurriculumModalProps> = ({
   currentSubjectName,
   currentGradeName,
   currentCountryName,
+  currentYearName,
+  currentSemesterName,
 }) => {
   // Navigation & Step State
   const [step, setStep] = useState<'upload' | 'analyzing' | 'review'>('upload');
@@ -587,11 +591,23 @@ export const AiCurriculumModal: React.FC<AiCurriculumModalProps> = ({
         {step === 'upload' && (
           <div className="p-6 overflow-y-auto flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full text-center">
             {/* Context Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F1F3F5] text-[11px] font-bold text-[var(--navy)] mb-4">
+            <div className="inline-flex flex-wrap items-center justify-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F1F3F5] text-[11px] font-bold text-[var(--navy)] mb-4">
               <span>{currentCountryName}</span>
               <span>•</span>
+              {currentYearName && (
+                <>
+                  <span>{currentYearName}</span>
+                  <span>•</span>
+                </>
+              )}
               <span>{currentGradeName}</span>
               <span>•</span>
+              {currentSemesterName && (
+                <>
+                  <span>{currentSemesterName}</span>
+                  <span>•</span>
+                </>
+              )}
               <span className="text-[var(--teal)]">{currentSubjectName}</span>
             </div>
 

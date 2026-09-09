@@ -61,7 +61,9 @@ export interface UnitItem {
 
 interface CurriculumScope {
   country: string;
+  year: string;
   grade: string;
+  semester: string;
   subject: string;
 }
 
@@ -71,14 +73,16 @@ interface CurriculumPageProps {
 }
 
 export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
-  // نطاق المنهج المعروض (Scope filter)
+  // نطاق المنهج المعروض (Scope filter: الدولة، السنة، الصف، الفصل، المادة)
   const [scope, setScope] = useState<CurriculumScope>({
     country: 'SA',
+    year: '2025-2026',
     grade: 'grade_6',
+    semester: 'term_1',
     subject: 'science', // مادة العلوم فارغة تماماً لعرض وتجربة تصميم المواد الحديثة عديمة البيانات
   });
 
-  // Country options
+  // 1. خيارات الدولة (Countries)
   const countries = [
     { code: 'SA', name: 'SA السعودية' },
     { code: 'EG', name: 'EG مصر' },
@@ -86,19 +90,35 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     { code: 'JO', name: 'JO الأردن' },
   ];
 
-  // Grades list
+  // 2. خيارات السنة الدراسية (Academic Years)
+  const academicYears = [
+    { id: '2025-2026', name: '2025 - 2026 (الحالي)' },
+    { id: '2024-2025', name: '2024 - 2025' },
+    { id: '2026-2027', name: '2026 - 2027' },
+    { id: '2023-2024', name: '2023 - 2024' },
+  ];
+
+  // 3. خيارات الصف الدراسي (Grades)
   const grades = [
     { id: 'grade_4', name: 'الرابع الابتدائي' },
     { id: 'grade_5', name: 'الخامس الابتدائي' },
     { id: 'grade_6', name: 'السادس الابتدائي' },
     { id: 'grade_7', name: 'الأول المتوسط' },
     { id: 'grade_8', name: 'الثاني المتوسط' },
+    { id: 'grade_9', name: 'الثالث المتوسط' },
   ];
 
-  // Subjects list
+  // 4. خيارات الفصل الدراسي (Semesters / Terms)
+  const semesters = [
+    { id: 'term_1', name: 'الفصل الأول' },
+    { id: 'term_2', name: 'الفصل الثاني' },
+    { id: 'term_both', name: 'الفصل الأول و الثاني' },
+  ];
+
+  // 5. خيارات المادة الدراسية (Subjects)
   const subjects = [
-    { id: 'math', name: 'رياضيات' },
     { id: 'science', name: 'العلوم' },
+    { id: 'math', name: 'رياضيات' },
     { id: 'arabic', name: 'لغة عربية' },
     { id: 'english', name: 'لغة إنجليزية' },
     { id: 'islamic', name: 'الدراسات الإسلامية' },
@@ -202,6 +222,8 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
   const currentSubject = subjects.find((s) => s.id === scope.subject);
   const currentGrade = grades.find((g) => g.id === scope.grade);
   const currentCountry = countries.find((c) => c.code === scope.country);
+  const currentYear = academicYears.find((y) => y.id === scope.year);
+  const currentSemester = semesters.find((sem) => sem.id === scope.semester);
 
   // الدرس النشط حالياً للمعاينة والتعديل
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
@@ -663,9 +685,11 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     setIsEditUnitModalOpen(false);
   };
 
-  // Country name display helper
+  // Scope display helpers
   const selectedCountryName = countries.find((c) => c.code === scope.country)?.name || scope.country;
+  const selectedYearName = academicYears.find((y) => y.id === scope.year)?.name || scope.year;
   const selectedGradeName = grades.find((g) => g.id === scope.grade)?.name || scope.grade;
+  const selectedSemesterName = semesters.find((s) => s.id === scope.semester)?.name || scope.semester;
   const selectedSubjectName = subjects.find((s) => s.id === scope.subject)?.name || scope.subject;
 
   return (
@@ -676,7 +700,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
           <div>
             <h3 className="text-[13.5px] font-extrabold text-[var(--navy)] m-0">نطاق المنهج المعروض</h3>
             <p className="text-[11px] text-[var(--gray)] m-0 leading-relaxed">
-              اختر الدولة ثم الصف ثم المادة لعرض شجرة المنهج الخاصة بها — كل مستوى يُصفّي خيارات المستوى التالي.
+              اختر الدولة، السنة، الصف، الفصل، والمادة لعرض وإدارة شجرة المنهج والمحتوى التعليمي الخاص بها.
             </p>
           </div>
           <button
@@ -690,12 +714,15 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
           </button>
         </div>
 
-        {/* Filter Bar with chevrons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 items-center bg-[#FAFBFC] p-2.5 rounded-xl border border-[var(--border-light)]">
+        {/* شريط محددات النطاق الخمسة: (الدولة، السنة، الصف، الفصل، المادة) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 bg-[#FAFBFC] p-3 rounded-xl border border-[var(--border-light)]">
           {/* 1. الدولة */}
-          <div className="flex items-center gap-2">
+          <div>
+            <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
+              الدولة <span className="text-[var(--coral)]">*</span>
+            </label>
             <select
-              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer"
+              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer w-full"
               value={scope.country}
               onChange={(e) => setScope((prev) => ({ ...prev, country: e.target.value }))}
             >
@@ -705,13 +732,33 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                 </option>
               ))}
             </select>
-            <ChevronLeft className="w-4 h-4 text-[var(--mid)] shrink-0 hidden md:block" />
           </div>
 
-          {/* 2. الصف الدراسي */}
-          <div className="flex items-center gap-2">
+          {/* 2. السنة */}
+          <div>
+            <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
+              السنة <span className="text-[var(--coral)]">*</span>
+            </label>
             <select
-              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer"
+              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer w-full font-latin"
+              value={scope.year}
+              onChange={(e) => setScope((prev) => ({ ...prev, year: e.target.value }))}
+            >
+              {academicYears.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. الصف */}
+          <div>
+            <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
+              الصف <span className="text-[var(--coral)]">*</span>
+            </label>
+            <select
+              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer w-full"
               value={scope.grade}
               onChange={(e) => setScope((prev) => ({ ...prev, grade: e.target.value }))}
             >
@@ -721,13 +768,33 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                 </option>
               ))}
             </select>
-            <ChevronLeft className="w-4 h-4 text-[var(--mid)] shrink-0 hidden md:block" />
           </div>
 
-          {/* 3. المادة الدراسية */}
+          {/* 4. الفصل */}
           <div>
+            <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
+              الفصل <span className="text-[var(--coral)]">*</span>
+            </label>
             <select
-              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer"
+              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer w-full"
+              value={scope.semester}
+              onChange={(e) => setScope((prev) => ({ ...prev, semester: e.target.value }))}
+            >
+              {semesters.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 5. المادة */}
+          <div>
+            <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
+              المادة <span className="text-[var(--coral)]">*</span>
+            </label>
+            <select
+              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer w-full"
               value={scope.subject}
               onChange={(e) => handleSubjectChange(e.target.value)}
             >
@@ -1940,6 +2007,8 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
         currentSubjectName={selectedSubjectName}
         currentGradeName={selectedGradeName}
         currentCountryName={selectedCountryName}
+        currentYearName={selectedYearName}
+        currentSemesterName={selectedSemesterName}
       />
     </div>
   );
