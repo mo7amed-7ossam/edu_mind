@@ -51,11 +51,14 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
     'يتم جمع الآحاد مع الآحاد (5 + 7 = 12) ثم العشرات (20 + 10 + 10 = 40) الناتج = 42'
   );
 
-  // المجموعة
-  const [group, setGroup] = useState<string>(question.group || 'الجمع والطرح');
+  // الوحدة
+  const [unit, setUnit] = useState<string>(question.unit || 'unit-1');
 
   // الدرس
   const [lesson, setLesson] = useState<string>(question.lesson || 'lesson-1');
+
+  // المجموعة
+  const [group, setGroup] = useState<string>(question.group || 'الجمع والطرح');
 
   // مستوى الصعوبة
   const [difficulty, setDifficulty] = useState<'سهل' | 'متوسط' | 'صعب'>(
@@ -102,6 +105,7 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
           ? 'مقالي'
           : 'اختيار من متعدد',
       difficulty,
+      unit,
       group,
       lesson,
       skillTag,
@@ -136,6 +140,48 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
         </div>
 
         <div className="flex flex-col gap-5 w-full">
+          {/* الوحدة والدرس في بداية الصفحة جنباً إلى جنب */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[var(--border-light)]">
+            {/* الوحدة */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-bold text-[var(--navy)]">
+                  الوحدة <span className="text-[var(--coral)]">*</span>
+                </label>
+              </div>
+              <select
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                className="admin-select w-full text-[11px] font-bold text-[var(--navy)] cursor-pointer"
+              >
+                <option value="unit-1">الوحدة 1 — الأعداد والعمليات</option>
+                <option value="unit-2">الوحدة 2 — الكسور والعمليات عليها</option>
+                <option value="unit-3">الوحدة 3 — الهندسة والقياس</option>
+                <option value="unit-4">الوحدة 4 — الإحصاء والاحتمال</option>
+              </select>
+            </div>
+
+            {/* الدرس */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-bold text-[var(--navy)]">
+                  الدرس
+                </label>
+                <span className="text-[9.5px] text-[var(--gray)] font-normal">اختياري</span>
+              </div>
+              <select
+                value={lesson}
+                onChange={(e) => setLesson(e.target.value)}
+                className="admin-select w-full text-[11px] font-bold text-[var(--navy)] cursor-pointer"
+              >
+                <option value="lesson-1">الدرس 1: مقدمة في جمع وطرح الأعداد</option>
+                <option value="lesson-2">الدرس 2: خصائص الجمع والطرح</option>
+                <option value="lesson-3">الدرس 3: حل المسائل وتقدير النواتج</option>
+                <option value="lesson-4">الدرس 4: الحساب الذهني والتطبيقات</option>
+              </select>
+            </div>
+          </div>
+
           {/* 1. نوع السؤال * */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-2">
@@ -288,45 +334,7 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
             </div>
           )}
 
-          {/* 4. المجموعة * */}
-          <div>
-            <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
-              المجموعة <span className="text-[var(--coral)]">*</span>
-            </label>
-            <select
-              value={group}
-              onChange={(e) => setGroup(e.target.value)}
-              className="admin-select w-full text-[11px] font-bold text-[var(--navy)] cursor-pointer"
-            >
-              <option value="الجمع والطرح">الجمع والطرح</option>
-              <option value="group-add-sub">الجمع والطرح</option>
-              <option value="group-mul-div">الضرب والقسمة</option>
-              <option value="group-mixed">العمليات المركبة</option>
-              <option value="الكسور والعمليات عليها">الكسور والعمليات عليها</option>
-            </select>
-          </div>
-
-          {/* 5. الدرس (اختياري) */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[11px] font-bold text-[var(--navy)]">
-                الدرس
-              </label>
-              <span className="text-[9.5px] text-[var(--gray)] font-normal">اختياري</span>
-            </div>
-            <select
-              value={lesson}
-              onChange={(e) => setLesson(e.target.value)}
-              className="admin-select w-full text-[11px] font-bold text-[var(--navy)] cursor-pointer"
-            >
-              <option value="lesson-1">الدرس 1: مقدمة في جمع وطرح الأعداد</option>
-              <option value="lesson-2">الدرس 2: خصائص الجمع والطرح</option>
-              <option value="lesson-3">الدرس 3: حل المسائل وتقدير النواتج</option>
-              <option value="lesson-4">الدرس 4: الحساب الذهني والتطبيقات</option>
-            </select>
-          </div>
-
-          {/* 6. مستوى الصعوبة * */}
+          {/* مستوى الصعوبة * */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-2">
               مستوى الصعوبة <span className="text-[var(--coral)]">*</span>
