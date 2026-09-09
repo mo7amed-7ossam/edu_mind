@@ -30,10 +30,14 @@ export interface QuestionItem {
   type: 'اختيار من متعدد' | 'صح وخطأ' | 'إكمال الفراغ' | 'مقالي' | 'مقالي قصير';
   difficulty: 'سهل' | 'متوسط' | 'صعب';
   countryCode: string;
+  system?: 'national' | 'international';
+  year?: string;
   grade: string;
+  semester?: string;
   subject: string;
-  unit: string;
-  group: string;
+  unit?: string;
+  group?: string;
+  lesson?: string;
   skillTag?: 'فهم' | 'تطبيق' | 'تحليل' | 'تذكر';
   options?: QuestionOption[];
   source?: 'manual' | 'ai' | 'file';
@@ -80,15 +84,22 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
   const [deleteModalTarget, setDeleteModalTarget] = useState<DeleteModalTarget | null>(null);
 
   // نطاق التصفية (Cascading Scope State)
+  // المحددات الإلزامية (Required *)
   const [selectedCountry, setSelectedCountry] = useState<string>('SA');
+  const [selectedSystem, setSelectedSystem] = useState<'national' | 'international'>('national');
+  const [selectedYear, setSelectedYear] = useState<string>('2025-2026');
   const [selectedGrade, setSelectedGrade] = useState<string>('grade-6');
+  const [selectedSemester, setSelectedSemester] = useState<string>('sem-1');
   const [selectedSubject, setSelectedSubject] = useState<string>('math');
-  const [selectedUnit, setSelectedUnit] = useState<string>('unit-1');
-  const [selectedGroup, setSelectedGroup] = useState<string>('group-add-sub');
 
-  // تصفيات إضافية (Type & Difficulty)
-  const [selectedType, setSelectedType] = useState<string>('all');
+  // المحددات غير الإلزامية (اللى مش ريكوايرد: الوحدة، المجموعة، الدرس)
+  const [selectedUnit, setSelectedUnit] = useState<string>('all');
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [selectedLesson, setSelectedLesson] = useState<string>('all');
+
+  // تصفيات إضافية (الصعوبة والنوع)
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
 
   // نظام التبويبات (3 تبويبات رئيسية)
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'files'>('manual');
@@ -102,10 +113,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       difficulty: 'سهل',
       skillTag: 'فهم',
       countryCode: 'SA',
+      system: 'national',
+      year: '2025-2026',
       grade: 'grade-6',
+      semester: 'sem-1',
       subject: 'math',
       unit: 'unit-1',
-      group: 'الجمع والطرح',
+      group: 'group-add-sub',
+      lesson: 'lesson-1',
       source: 'manual',
       options: [
         { id: 'opt-1', text: '42', isCorrect: true },
@@ -120,10 +135,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       type: 'اختيار من متعدد',
       difficulty: 'متوسط',
       countryCode: 'SA',
+      system: 'national',
+      year: '2025-2026',
       grade: 'grade-6',
+      semester: 'sem-1',
       subject: 'math',
       unit: 'unit-1',
       group: 'group-add-sub',
+      lesson: 'lesson-1',
       source: 'manual',
     },
     {
@@ -132,10 +151,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       type: 'صح وخطأ',
       difficulty: 'سهل',
       countryCode: 'SA',
+      system: 'national',
+      year: '2025-2026',
       grade: 'grade-6',
+      semester: 'sem-1',
       subject: 'math',
       unit: 'unit-1',
       group: 'group-add-sub',
+      lesson: 'lesson-2',
       source: 'manual',
     },
     {
@@ -144,10 +167,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       type: 'اختيار من متعدد',
       difficulty: 'متوسط',
       countryCode: 'SA',
+      system: 'national',
+      year: '2025-2026',
       grade: 'grade-6',
+      semester: 'sem-1',
       subject: 'math',
       unit: 'unit-1',
       group: 'group-add-sub',
+      lesson: 'lesson-3',
       source: 'manual',
     },
     {
@@ -156,10 +183,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       type: 'اختيار من متعدد',
       difficulty: 'صعب',
       countryCode: 'SA',
+      system: 'national',
+      year: '2025-2026',
       grade: 'grade-6',
+      semester: 'sem-1',
       subject: 'math',
       unit: 'unit-1',
       group: 'group-add-sub',
+      lesson: 'lesson-4',
       source: 'manual',
     },
     {
@@ -168,10 +199,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       type: 'اختيار من متعدد',
       difficulty: 'صعب',
       countryCode: 'SA',
+      system: 'national',
+      year: '2025-2026',
       grade: 'grade-6',
+      semester: 'sem-1',
       subject: 'math',
       unit: 'unit-1',
       group: 'group-add-sub',
+      lesson: 'lesson-3',
       source: 'manual',
     },
   ]);
@@ -421,7 +456,18 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
         ],
       ];
 
-      const chosenBatch = batches[(nextBatchIndex - 1) % batches.length];
+      const chosenBatch = batches[(nextBatchIndex - 1) % batches.length].map((q) => ({
+        ...q,
+        countryCode: selectedCountry,
+        system: selectedSystem,
+        year: selectedYear,
+        grade: selectedGrade,
+        semester: selectedSemester,
+        subject: selectedSubject,
+        unit: selectedUnit === 'all' ? 'unit-1' : selectedUnit,
+        group: selectedGroup === 'all' ? 'group-add-sub' : selectedGroup,
+        lesson: selectedLesson === 'all' ? 'lesson-1' : selectedLesson,
+      }));
       setAiQuestions((prev) => [...prev, ...chosenBatch]);
       setAiGenerationCount(nextBatchIndex);
       setIsGeneratingAi(false);
@@ -521,23 +567,99 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
     setActiveTab('files');
   };
 
-  // تصفية الأسئلة المسجلة بناءً على الصعوبة والنوع
+  // تصفية الأسئلة المسجلة بناءً على المحددات الإلزامية والاختيارية والصعوبة والنوع
   const filteredManualQuestions = useMemo(() => {
     return manualQuestions.filter((q) => {
-      if (selectedType !== 'all' && q.type !== selectedType) return false;
+      // المحددات الإلزامية
+      if (selectedCountry && q.countryCode && q.countryCode !== selectedCountry) return false;
+      if (selectedSystem && q.system && q.system !== selectedSystem) return false;
+      if (selectedYear && q.year && q.year !== selectedYear) return false;
+      if (selectedGrade && q.grade && q.grade !== selectedGrade) return false;
+      if (selectedSubject && q.subject && q.subject !== selectedSubject) return false;
+      if (
+        selectedSemester &&
+        q.semester &&
+        selectedSemester !== 'sem-1-2' &&
+        q.semester !== 'sem-1-2' &&
+        q.semester !== selectedSemester
+      )
+        return false;
+
+      // المحددات غير الإلزامية (اللى مش ريكوايرد: الوحدة، المجموعة، الدرس)
+      if (selectedUnit !== 'all' && q.unit && q.unit !== selectedUnit) return false;
+      if (
+        selectedGroup !== 'all' &&
+        q.group &&
+        q.group !== selectedGroup &&
+        !(selectedGroup === 'group-add-sub' && q.group === 'الجمع والطرح')
+      )
+        return false;
+      if (selectedLesson !== 'all' && q.lesson && q.lesson !== selectedLesson) return false;
+
+      // تصفيات إضافية
       if (selectedDifficulty !== 'all' && q.difficulty !== selectedDifficulty) return false;
+      if (selectedType !== 'all' && q.type !== selectedType) return false;
+
       return true;
     });
-  }, [manualQuestions, selectedType, selectedDifficulty]);
+  }, [
+    manualQuestions,
+    selectedCountry,
+    selectedSystem,
+    selectedYear,
+    selectedGrade,
+    selectedSemester,
+    selectedSubject,
+    selectedUnit,
+    selectedGroup,
+    selectedLesson,
+    selectedDifficulty,
+    selectedType,
+  ]);
 
-  // تصفية أسئلة الذكاء الاصطناعي بناءً على الصعوبة والنوع
+  // تصفية أسئلة الذكاء الاصطناعي بناءً على المحددات الإلزامية والاختيارية والصعوبة والنوع
   const filteredAiQuestions = useMemo(() => {
     return aiQuestions.filter((q) => {
-      if (selectedType !== 'all' && q.type !== selectedType) return false;
+      // المحددات الإلزامية
+      if (selectedCountry && q.countryCode && q.countryCode !== selectedCountry) return false;
+      if (selectedSystem && q.system && q.system !== selectedSystem) return false;
+      if (selectedYear && q.year && q.year !== selectedYear) return false;
+      if (selectedGrade && q.grade && q.grade !== selectedGrade) return false;
+      if (selectedSubject && q.subject && q.subject !== selectedSubject) return false;
+      if (
+        selectedSemester &&
+        q.semester &&
+        selectedSemester !== 'sem-1-2' &&
+        q.semester !== 'sem-1-2' &&
+        q.semester !== selectedSemester
+      )
+        return false;
+
+      // المحددات غير الإلزامية (اللى مش ريكوايرد: الوحدة، المجموعة، الدرس)
+      if (selectedUnit !== 'all' && q.unit && q.unit !== selectedUnit) return false;
+      if (selectedGroup !== 'all' && q.group && q.group !== selectedGroup) return false;
+      if (selectedLesson !== 'all' && q.lesson && q.lesson !== selectedLesson) return false;
+
+      // تصفيات إضافية
       if (selectedDifficulty !== 'all' && q.difficulty !== selectedDifficulty) return false;
+      if (selectedType !== 'all' && q.type !== selectedType) return false;
+
       return true;
     });
-  }, [aiQuestions, selectedType, selectedDifficulty]);
+  }, [
+    aiQuestions,
+    selectedCountry,
+    selectedSystem,
+    selectedYear,
+    selectedGrade,
+    selectedSemester,
+    selectedSubject,
+    selectedUnit,
+    selectedGroup,
+    selectedLesson,
+    selectedDifficulty,
+    selectedType,
+  ]);
 
   // إجمالي الأسئلة المستخرجة من الملفات المرفوعة
   const totalFileQuestionsCount = useMemo(() => {
@@ -617,10 +739,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       difficulty: 'سهل',
       skillTag: 'فهم',
       countryCode: selectedCountry,
+      system: selectedSystem,
+      year: selectedYear,
       grade: selectedGrade,
+      semester: selectedSemester,
       subject: selectedSubject,
-      unit: selectedUnit,
-      group: 'الجمع والطرح',
+      unit: selectedUnit === 'all' ? 'unit-1' : selectedUnit,
+      group: selectedGroup === 'all' ? 'group-add-sub' : selectedGroup,
+      lesson: selectedLesson === 'all' ? 'lesson-1' : selectedLesson,
       source: 'manual',
       options: [
         { id: 'opt-1', text: '', isCorrect: true },
@@ -649,15 +775,20 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
       {/* 1. نطاق الأسئلة المعروضة */}
       <div className="admin-panel shadow-xs">
         <div className="flex flex-col gap-1 mb-4">
-          <h3 className="text-[13.5px] font-extrabold text-[var(--navy)] m-0">نطاق الأسئلة المعروضة</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-[13.5px] font-extrabold text-[var(--navy)] m-0">نطاق الأسئلة المعروضة</h3>
+            <span className="text-[10px] text-[var(--teal)] bg-[#E3F7F4] px-2 py-0.5 rounded-full font-bold">
+              تصفية مخصصة
+            </span>
+          </div>
           <p className="text-[11px] text-[var(--gray)] m-0 leading-relaxed">
-            اختر الدولة أولاً، ثم الصف، فالمادة، فالوحدة — يتحدّث كل مستوى تلقائياً حسب المستوى الذي قبله، وصولاً للمجموعة الفرعية التي تُضاف إليها الأسئلة.
+            المحددات الرئيسية للمنهج (الدولة، نظام المنهج، السنة، الصف، الفصل، المادة) إلزامية لتحديد نطاق المحتوى، ويمكن حصر الأسئلة بدقة أكبر حسب الوحدة أو المجموعة أو الدرس (اختياري).
           </p>
         </div>
 
-        {/* الصف الأول: المحددات الأساسية الإلزامية */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
-          {/* الدولة */}
+        {/* الصف الأول: المحددات الأساسية الإلزامية (الدولة، نظام المنهج، السنة، الصف، الفصل، المادة) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 w-full">
+          {/* 1. الدولة */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
               الدولة <span className="text-[var(--coral)]">*</span>
@@ -667,14 +798,47 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
               onChange={(e) => setSelectedCountry(e.target.value)}
               className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
             >
-              <option value="SA">SA السعودية</option>
-              <option value="EG">EG مصر</option>
-              <option value="AE">AE الإمارات</option>
-              <option value="JO">JO الأردن</option>
+              <option value="SA">SA السعودية 🇸🇦</option>
+              <option value="EG">EG مصر 🇪🇬</option>
+              <option value="AE">AE الإمارات 🇦🇪</option>
+              <option value="KW">KW الكويت 🇰🇼</option>
+              <option value="QA">QA قطر 🇶🇦</option>
+              <option value="JO">JO الأردن 🇯🇴</option>
             </select>
           </div>
 
-          {/* الصف */}
+          {/* 2. نظام المنهج */}
+          <div>
+            <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
+              نظام المنهج <span className="text-[var(--coral)]">*</span>
+            </label>
+            <select
+              value={selectedSystem}
+              onChange={(e) => setSelectedSystem(e.target.value as 'national' | 'international')}
+              className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
+            >
+              <option value="national">وطني (حكومي / أهلي)</option>
+              <option value="international">دولي (أمريكي / بريطاني)</option>
+            </select>
+          </div>
+
+          {/* 3. السنة */}
+          <div>
+            <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
+              السنة <span className="text-[var(--coral)]">*</span>
+            </label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
+            >
+              <option value="2025-2026">2025 - 2026</option>
+              <option value="2024-2025">2024 - 2025</option>
+              <option value="2023-2024">2023 - 2024</option>
+            </select>
+          </div>
+
+          {/* 4. الصف */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
               الصف <span className="text-[var(--coral)]">*</span>
@@ -684,14 +848,32 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
               onChange={(e) => setSelectedGrade(e.target.value)}
               className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
             >
-              <option value="grade-6">السادس الابتدائي</option>
-              <option value="grade-5">الخامس الابتدائي</option>
               <option value="grade-4">الرابع الابتدائي</option>
-              <option value="grade-7">الأول المتوسط</option>
+              <option value="grade-5">الخامس الابتدائي</option>
+              <option value="grade-6">السادس الابتدائي</option>
+              <option value="prep-1">الأول المتوسط / الإعدادي</option>
+              <option value="prep-2">الثاني المتوسط</option>
+              <option value="prep-3">الثالث المتوسط</option>
             </select>
           </div>
 
-          {/* المادة */}
+          {/* 5. الفصل */}
+          <div>
+            <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
+              الفصل <span className="text-[var(--coral)]">*</span>
+            </label>
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
+            >
+              <option value="sem-1">الفصل الأول</option>
+              <option value="sem-2">الفصل الثاني</option>
+              <option value="sem-1-2">الفصل الأول و الثاني</option>
+            </select>
+          </div>
+
+          {/* 6. المادة */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
               المادة <span className="text-[var(--coral)]">*</span>
@@ -705,72 +887,108 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
               <option value="science">علوم 🧪</option>
               <option value="arabic">لغة عربية 📖</option>
               <option value="english">لغة إنجليزية 🔤</option>
-            </select>
-          </div>
-
-          {/* الوحدة */}
-          <div>
-            <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
-              الوحدة <span className="text-[var(--coral)]">*</span>
-            </label>
-            <select
-              value={selectedUnit}
-              onChange={(e) => setSelectedUnit(e.target.value)}
-              className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
-            >
-              <option value="unit-1">الوحدة 1 — الأعداد والعمليات</option>
-              <option value="unit-2">الوحدة 2 — الكسور والعمليات عليها</option>
-              <option value="unit-3">الوحدة 3 — الهندسة والقياس</option>
-            </select>
-          </div>
-
-          {/* المجموعة */}
-          <div>
-            <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
-              المجموعة <span className="text-[var(--coral)]">*</span>
-            </label>
-            <select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-              className="admin-select text-[11px] font-bold text-[var(--navy)] cursor-pointer w-full"
-            >
-              <option value="group-add-sub">الجمع والطرح</option>
-              <option value="group-mul-div">الضرب والقسمة</option>
-              <option value="group-mixed">العمليات المركبة</option>
+              <option value="islamic">دراسات إسلامية 🕌</option>
+              <option value="social">دراسات اجتماعية 🌍</option>
             </select>
           </div>
         </div>
 
-        {/* الصف الثاني: فلاتر الصعوبة والنوع */}
+        {/* الصف الثاني: تفريعات المنهج غير الإلزامية (الوحدة، المجموعة، الدرس) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3.5 pt-3.5 border-t border-[var(--border-light)] w-full">
+          {/* 7. الوحدة (مش ريكوايرد - اختياري) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-[var(--navy)]">
+                الوحدة
+              </label>
+              <span className="text-[9.5px] text-[var(--gray)] font-normal">اختياري</span>
+            </div>
+            <select
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(e.target.value)}
+              className="admin-select text-[11px] text-[var(--navy)] cursor-pointer w-full"
+            >
+              <option value="all">جميع الوحدات</option>
+              <option value="unit-1">الوحدة 1 — الأعداد والعمليات</option>
+              <option value="unit-2">الوحدة 2 — الكسور والعمليات عليها</option>
+              <option value="unit-3">الوحدة 3 — الهندسة والقياس</option>
+              <option value="unit-4">الوحدة 4 — الإحصاء والاحتمال</option>
+            </select>
+          </div>
+
+          {/* 8. المجموعة (مش ريكوايرد - اختياري) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-[var(--navy)]">
+                المجموعة
+              </label>
+              <span className="text-[9.5px] text-[var(--gray)] font-normal">اختياري</span>
+            </div>
+            <select
+              value={selectedGroup}
+              onChange={(e) => setSelectedGroup(e.target.value)}
+              className="admin-select text-[11px] text-[var(--navy)] cursor-pointer w-full"
+            >
+              <option value="all">جميع المجموعات</option>
+              <option value="group-add-sub">الجمع والطرح</option>
+              <option value="group-mul-div">الضرب والقسمة</option>
+              <option value="group-mixed">العمليات المركبة</option>
+              <option value="group-geom">الأشكال الهندسية</option>
+            </select>
+          </div>
+
+          {/* 9. الدرس (مش ريكوايرد - اختياري) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-[var(--navy)]">
+                الدرس
+              </label>
+              <span className="text-[9.5px] text-[var(--gray)] font-normal">اختياري</span>
+            </div>
+            <select
+              value={selectedLesson}
+              onChange={(e) => setSelectedLesson(e.target.value)}
+              className="admin-select text-[11px] text-[var(--navy)] cursor-pointer w-full"
+            >
+              <option value="all">جميع الدروس</option>
+              <option value="lesson-1">الدرس 1: مقدمة في جمع وطرح الأعداد</option>
+              <option value="lesson-2">الدرس 2: خصائص الجمع والطرح</option>
+              <option value="lesson-3">الدرس 3: حل المسائل وتقدير النواتج</option>
+              <option value="lesson-4">الدرس 4: الحساب الذهني والتطبيقات</option>
+            </select>
+          </div>
+        </div>
+
+        {/* الصف الثالث: فلاتر خصائص السؤال (الصعوبة والنوع في row جديد) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-[var(--border-light)] w-full">
-          {/* الصعوبة */}
-          <div className="w-full">
+          {/* 10. الصعوبة */}
+          <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
-              الصعوبة
+              مستوى الصعوبة
             </label>
             <select
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
               className="admin-select text-[11px] text-[var(--navy)] cursor-pointer w-full"
             >
-              <option value="all">الكل</option>
+              <option value="all">جميع المستويات</option>
               <option value="سهل">سهل</option>
               <option value="متوسط">متوسط</option>
               <option value="صعب">صعب</option>
             </select>
           </div>
 
-          {/* النوع */}
-          <div className="w-full">
+          {/* 11. النوع */}
+          <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
-              النوع
+              نوع السؤال
             </label>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
               className="admin-select text-[11px] text-[var(--navy)] cursor-pointer w-full"
             >
-              <option value="all">الكل</option>
+              <option value="all">جميع الأنواع</option>
               <option value="اختيار من متعدد">اختيار من متعدد</option>
               <option value="صح وخطأ">صح وخطأ</option>
               <option value="إكمال الفراغ">إكمال الفراغ</option>
@@ -1358,10 +1576,14 @@ export const QuestionBankPage: React.FC<QuestionBankPageProps> = ({
         onClose={() => setIsUploadModalOpen(false)}
         scopeInfo={{
           countryCode: selectedCountry,
+          system: selectedSystem,
+          year: selectedYear,
           grade: selectedGrade,
+          semester: selectedSemester,
           subject: selectedSubject,
-          unit: selectedUnit,
-          group: selectedGroup,
+          unit: selectedUnit === 'all' ? 'unit-1' : selectedUnit,
+          group: selectedGroup === 'all' ? 'group-add-sub' : selectedGroup,
+          lesson: selectedLesson === 'all' ? 'lesson-1' : selectedLesson,
         }}
         onImportSuccess={handleImportFileSuccess}
       />

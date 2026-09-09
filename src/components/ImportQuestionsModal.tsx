@@ -17,10 +17,14 @@ interface ImportQuestionsModalProps {
   onClose: () => void;
   scopeInfo: {
     countryCode: string;
+    system?: 'national' | 'international';
+    year?: string;
     grade: string;
+    semester?: string;
     subject: string;
     unit: string;
     group: string;
+    lesson?: string;
   };
   onImportSuccess: (fileItem: UploadedFileItem) => void;
 }

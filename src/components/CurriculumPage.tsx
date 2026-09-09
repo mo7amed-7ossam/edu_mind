@@ -22,8 +22,11 @@ import {
   UploadCloud,
   Film,
   Sparkles,
+  FileSpreadsheet,
+  Presentation,
+  File,
 } from 'lucide-react';
-import { AiCurriculumModal } from './AiCurriculumModal';
+import { UploadCurriculumModal } from './UploadCurriculumModal';
 
 export type PublishStatus = 'published' | 'draft';
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
@@ -61,6 +64,7 @@ export interface UnitItem {
 
 interface CurriculumScope {
   country: string;
+  system: 'national' | 'international';
   year: string;
   grade: string;
   semester: string;
@@ -73,9 +77,10 @@ interface CurriculumPageProps {
 }
 
 export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
-  // نطاق المنهج المعروض (Scope filter: الدولة، السنة، الصف، الفصل، المادة)
+  // نطاق المنهج المعروض (Scope filter: الدولة، نظام المنهج دولي أو وطني، السنة، الصف، الفصل، المادة)
   const [scope, setScope] = useState<CurriculumScope>({
     country: 'SA',
+    system: 'national',
     year: '2025-2026',
     grade: 'grade_6',
     semester: 'term_1',
@@ -90,7 +95,13 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     { code: 'JO', name: 'JO الأردن' },
   ];
 
-  // 2. خيارات السنة الدراسية (Academic Years)
+  // 2. خيارات نظام المنهج (Curriculum System: دولي أو وطني)
+  const curriculumSystems = [
+    { id: 'national', name: 'وطني' },
+    { id: 'international', name: 'دولي' },
+  ];
+
+  // 3. خيارات السنة الدراسية (Academic Years)
   const academicYears = [
     { id: '2025-2026', name: '2025 - 2026 (الحالي)' },
     { id: '2024-2025', name: '2024 - 2025' },
@@ -98,7 +109,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     { id: '2023-2024', name: '2023 - 2024' },
   ];
 
-  // 3. خيارات الصف الدراسي (Grades)
+  // 4. خيارات الصف الدراسي (Grades)
   const grades = [
     { id: 'grade_4', name: 'الرابع الابتدائي' },
     { id: 'grade_5', name: 'الخامس الابتدائي' },
@@ -108,14 +119,14 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     { id: 'grade_9', name: 'الثالث المتوسط' },
   ];
 
-  // 4. خيارات الفصل الدراسي (Semesters / Terms)
+  // 5. خيارات الفصل الدراسي (Semesters / Terms)
   const semesters = [
     { id: 'term_1', name: 'الفصل الأول' },
     { id: 'term_2', name: 'الفصل الثاني' },
     { id: 'term_both', name: 'الفصل الأول و الثاني' },
   ];
 
-  // 5. خيارات المادة الدراسية (Subjects)
+  // 6. خيارات المادة الدراسية (Subjects)
   const subjects = [
     { id: 'science', name: 'العلوم' },
     { id: 'math', name: 'رياضيات' },
@@ -222,8 +233,84 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
   const currentSubject = subjects.find((s) => s.id === scope.subject);
   const currentGrade = grades.find((g) => g.id === scope.grade);
   const currentCountry = countries.find((c) => c.code === scope.country);
+  const currentSystem = curriculumSystems.find((sys) => sys.id === scope.system);
   const currentYear = academicYears.find((y) => y.id === scope.year);
   const currentSemester = semesters.find((sem) => sem.id === scope.semester);
+
+  // مساعد تحديد تفاصيل وأيقونة الملف
+  const getFileDetails = (fileName?: string, contentType?: 'video' | 'file') => {
+    const name = fileName || '';
+    const ext = name.split('.').pop()?.toLowerCase() || '';
+
+    if (contentType === 'video' || ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) {
+      return {
+        type: 'video',
+        label: 'فيديو (MP4)',
+        badge: 'MP4',
+        badgeClass: 'bg-[#E3F7F4] text-[var(--teal)] border-[var(--teal)]/30',
+        icon: Video,
+        color: 'var(--teal)',
+      };
+    }
+    if (ext === 'pdf') {
+      return {
+        type: 'pdf',
+        label: 'مستند PDF',
+        badge: 'PDF',
+        badgeClass: 'bg-[#FFF5F5] text-[#E53E3E] border-[#FED7D7]',
+        icon: FileText,
+        color: '#E53E3E',
+      };
+    }
+    if (['doc', 'docx'].includes(ext)) {
+      return {
+        type: 'doc',
+        label: 'مستند Word',
+        badge: 'DOCX',
+        badgeClass: 'bg-[#EBF8FF] text-[#2B6CB0] border-[#BEE3F8]',
+        icon: FileText,
+        color: '#2B6CB0',
+      };
+    }
+    if (['ppt', 'pptx'].includes(ext)) {
+      return {
+        type: 'ppt',
+        label: 'عرض تقديمي PPT',
+        badge: 'PPTX',
+        badgeClass: 'bg-[#FFFAF0] text-[#DD6B20] border-[#FEEBC8]',
+        icon: Presentation,
+        color: '#DD6B20',
+      };
+    }
+    if (['xls', 'xlsx'].includes(ext)) {
+      return {
+        type: 'xls',
+        label: 'جدول بيانات Excel',
+        badge: 'XLSX',
+        badgeClass: 'bg-[#F0FFF4] text-[#2F855A] border-[#C6F6D5]',
+        icon: FileSpreadsheet,
+        color: '#2F855A',
+      };
+    }
+    if (ext) {
+      return {
+        type: 'file',
+        label: `ملف (${ext.toUpperCase()})`,
+        badge: ext.toUpperCase(),
+        badgeClass: 'bg-[#F1F3F5] text-[var(--navy)] border-[var(--border-light)]',
+        icon: File,
+        color: 'var(--navy)',
+      };
+    }
+    return {
+      type: 'none',
+      label: 'لا يوجد ملف',
+      badge: 'NONE',
+      badgeClass: 'bg-[#F8F9FA] text-[var(--gray)] border-[var(--border-light)]',
+      icon: File,
+      color: 'var(--gray)',
+    };
+  };
 
   // الدرس النشط حالياً للمعاينة والتعديل
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
@@ -248,6 +335,9 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
       ? (activeLesson?.fileName ? { name: activeLesson.fileName, size: activeLesson.fileSize || '3.8 MB' } : null)
       : (activeLesson?.videoName ? { name: activeLesson.videoName, size: activeLesson.videoSize || '42 MB' } : null)
   );
+
+  const currentFileDetails = getFileDetails(videoFile?.name, lessonContentType);
+  const CurrentFileIcon = currentFileDetails.icon;
 
   // تحديث الحقول عندما يتغير الدرس النشط أو تتغير المادة
   useEffect(() => {
@@ -344,25 +434,31 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     }
   };
 
-  const processVideoFile = (file: File) => {
+  const processUploadedFile = (file: File) => {
     setVideoUploadError(null);
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const isVideo = ['mp4', 'mov', 'webm', 'avi', 'mkv'].includes(ext) || file.type.startsWith('video/');
+    const isDocument = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'].includes(ext);
 
-    if (lessonContentType === 'video') {
-      // التحقق من صيغة الفيديو MP4 فقط
-      const isMp4 = file.name.toLowerCase().endsWith('.mp4') || file.type === 'video/mp4';
-      if (!isMp4) {
-        setVideoUploadError('تنبيه: صيغة الملف غير مدعومة للفيديو. يرجى اختيار ملف بصيغة MP4 فقط.');
-        return;
-      }
-      // الحد الأقصى لحجم الفيديو: 200MB
-      const maxBytes = 200 * 1024 * 1024;
-      if (file.size > maxBytes) {
-        setVideoUploadError('تنبيه: حجم الفيديو يتجاوز الحد الأقصى المسموح به (200MB). يرجى اختيار ملف أصغر.');
-        return;
-      }
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      const newFileObj = { name: file.name, size: `${sizeMb} MB` };
-      setVideoFile(newFileObj);
+    if (!isVideo && !isDocument) {
+      setVideoUploadError('تنبيه: صيغة الملف غير مدعومة. الصيغ المدعومة: MP4, MOV, PDF, DOC, DOCX, PPT, PPTX, XLSX.');
+      return;
+    }
+
+    const maxBytes = isVideo ? 200 * 1024 * 1024 : 50 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setVideoUploadError(
+        `تنبيه: حجم الملف يتجاوز الحد الأقصى المسموح به (${isVideo ? '200MB للفيديو' : '50MB للمستندات'}). يرجى اختيار ملف أصغر.`
+      );
+      return;
+    }
+
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    const newFileObj = { name: file.name, size: `${sizeMb} MB` };
+    setVideoFile(newFileObj);
+
+    if (isVideo) {
+      setLessonContentType('video');
       updateCurrentLesson({
         contentType: 'video',
         videoName: file.name,
@@ -372,22 +468,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
         fileSize: undefined,
       });
     } else {
-      // التحقق من صيغة المستند والملفات
-      const allowedExts = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.txt'];
-      const fileExt = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
-      if (!allowedExts.includes(fileExt)) {
-        setVideoUploadError('تنبيه: صيغة الملف غير مدعومة. الصيغ المسموحة للملفات: PDF, DOC, DOCX, PPT, PPTX.');
-        return;
-      }
-      // الحد الأقصى لحجم المستندات: 50MB
-      const maxDocBytes = 50 * 1024 * 1024;
-      if (file.size > maxDocBytes) {
-        setVideoUploadError('تنبيه: حجم الملف يتجاوز الحد الأقصى المسموح به (50MB). يرجى اختيار ملف أصغر.');
-        return;
-      }
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      const newFileObj = { name: file.name, size: `${sizeMb} MB` };
-      setVideoFile(newFileObj);
+      setLessonContentType('file');
       updateCurrentLesson({
         contentType: 'file',
         fileName: file.name,
@@ -402,7 +483,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      processVideoFile(file);
+      processUploadedFile(file);
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -414,7 +495,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
     setIsDraggingVideo(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      processVideoFile(file);
+      processUploadedFile(file);
     }
   };
 
@@ -546,14 +627,24 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
   };
 
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
-  const [isAiCurriculumModalOpen, setIsAiCurriculumModalOpen] = useState<boolean>(false);
+  const [isUploadCurriculumModalOpen, setIsUploadCurriculumModalOpen] = useState<boolean>(false);
+  const [successToast, setSuccessToast] = useState<{ message: string } | null>(null);
 
-  // Apply AI Generated Curriculum
-  const handleApplyAiCurriculum = (newUnits: UnitItem[]) => {
+  // معالجة ملف المنهج ووضعه في شجرة المنهج مباشرة
+  const handleApplyCurriculumFromFile = (
+    newUnits: UnitItem[],
+    summary: { unitsCount: number; lessonsCount: number; fileName: string }
+  ) => {
     setUnits(newUnits);
     if (newUnits.length > 0 && newUnits[0].groups.length > 0 && newUnits[0].groups[0].lessons.length > 0) {
       handleSelectLesson(newUnits[0].id, newUnits[0].groups[0].id, newUnits[0].groups[0].lessons[0]);
     }
+    setSuccessToast({
+      message: `تمت معالجة ملف "${summary.fileName}" وإدراج ${summary.unitsCount} وحدات و ${summary.lessonsCount} دروس في شجرة المنهج مباشرة بنجاح.`,
+    });
+    setTimeout(() => {
+      setSuccessToast(null);
+    }, 4500);
   };
 
   // Edit Unit title modal
@@ -687,6 +778,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
 
   // Scope display helpers
   const selectedCountryName = countries.find((c) => c.code === scope.country)?.name || scope.country;
+  const selectedSystemName = curriculumSystems.find((sys) => sys.id === scope.system)?.name || 'وطني';
   const selectedYearName = academicYears.find((y) => y.id === scope.year)?.name || scope.year;
   const selectedGradeName = grades.find((g) => g.id === scope.grade)?.name || scope.grade;
   const selectedSemesterName = semesters.find((s) => s.id === scope.semester)?.name || scope.semester;
@@ -700,22 +792,39 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
           <div>
             <h3 className="text-[13.5px] font-extrabold text-[var(--navy)] m-0">نطاق المنهج المعروض</h3>
             <p className="text-[11px] text-[var(--gray)] m-0 leading-relaxed">
-              اختر الدولة، السنة، الصف، الفصل، والمادة لعرض وإدارة شجرة المنهج والمحتوى التعليمي الخاص بها.
+              اختر الدولة، نظام المنهج (دولي أو وطني)، السنة، الصف، الفصل، والمادة لعرض وإدارة شجرة المنهج والمحتوى التعليمي الخاص بها.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => setIsAiCurriculumModalOpen(true)}
+            onClick={() => setIsUploadCurriculumModalOpen(true)}
             className="abtn teal text-[11px] py-1.5 px-3.5 inline-flex items-center gap-2 self-start sm:self-auto cursor-pointer shadow-xs shrink-0"
-            title="توليد وهيكلة المنهج بالذكاء الاصطناعي من ملف"
+            title="رفع ملف المنهج ومعالجته ووضعه في شجرة المنهج مباشرة"
           >
-            <Sparkles className="w-4 h-4 text-emerald-200" />
-            <span>مساعد المنهج الذكي AI</span>
+            <UploadCloud className="w-4 h-4" />
+            <span>رفع ومعالجة ملف المنهج</span>
           </button>
         </div>
 
-        {/* شريط محددات النطاق الخمسة: (الدولة، السنة، الصف، الفصل، المادة) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 bg-[#FAFBFC] p-3 rounded-xl border border-[var(--border-light)]">
+        {/* تنبيه نجاح المعالجة والإدراج المباشر */}
+        {successToast && (
+          <div className="p-3 mb-3.5 rounded-xl bg-[#E3F7F4] border border-[var(--teal)]/40 text-[11.5px] font-bold text-[var(--navy)] flex items-center justify-between shadow-xs animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[var(--teal)] shrink-0" />
+              <span>{successToast.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSuccessToast(null)}
+              className="text-[var(--gray)] hover:text-[var(--navy)] p-1 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* شريط محددات النطاق الستة: (الدولة، نظام المنهج، السنة، الصف، الفصل، المادة) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 bg-[#FAFBFC] p-3 rounded-xl border border-[var(--border-light)]">
           {/* 1. الدولة */}
           <div>
             <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
@@ -734,7 +843,30 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
             </select>
           </div>
 
-          {/* 2. السنة */}
+          {/* 2. نظام المنهج (دولي / وطني) */}
+          <div>
+            <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
+              نظام المنهج <span className="text-[var(--coral)]">*</span>
+            </label>
+            <select
+              className="admin-select text-[11.5px] font-bold bg-white text-[var(--navy)] cursor-pointer w-full"
+              value={scope.system}
+              onChange={(e) =>
+                setScope((prev) => ({
+                  ...prev,
+                  system: e.target.value as 'national' | 'international',
+                }))
+              }
+            >
+              {curriculumSystems.map((sys) => (
+                <option key={sys.id} value={sys.id}>
+                  {sys.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. السنة */}
           <div>
             <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
               السنة <span className="text-[var(--coral)]">*</span>
@@ -752,7 +884,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
             </select>
           </div>
 
-          {/* 3. الصف */}
+          {/* 4. الصف */}
           <div>
             <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
               الصف <span className="text-[var(--coral)]">*</span>
@@ -770,7 +902,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
             </select>
           </div>
 
-          {/* 4. الفصل */}
+          {/* 5. الفصل */}
           <div>
             <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
               الفصل <span className="text-[var(--coral)]">*</span>
@@ -788,7 +920,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
             </select>
           </div>
 
-          {/* 5. المادة */}
+          {/* 6. المادة */}
           <div>
             <label className="block text-[10.5px] font-bold text-[var(--navy)] mb-1">
               المادة <span className="text-[var(--coral)]">*</span>
@@ -820,11 +952,11 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                 <button
                   type="button"
                   className="abtn outline text-[10.5px] py-1.5 px-2.5 flex items-center gap-1 text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[#E3F7F4] cursor-pointer"
-                  onClick={() => setIsAiCurriculumModalOpen(true)}
-                  title="توليد وهيكلة المنهج بالذكاء الاصطناعي من ملف"
+                  onClick={() => setIsUploadCurriculumModalOpen(true)}
+                  title="رفع ملف المنهج واستخراجه ووضعه في الشجرة مباشرة"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
-                  <span>توليد AI</span>
+                  <UploadCloud className="w-3.5 h-3.5 text-[var(--teal)]" />
+                  <span>رفع ملف</span>
                 </button>
                 <button
                   type="button"
@@ -853,10 +985,10 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                   <button
                     type="button"
                     className="abtn teal text-[11px] py-1.5 px-3.5 flex items-center gap-1.5 shadow-xs cursor-pointer"
-                    onClick={() => setIsAiCurriculumModalOpen(true)}
+                    onClick={() => setIsUploadCurriculumModalOpen(true)}
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>توليد المنهج بالـ AI</span>
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>رفع ملف المنهج</span>
                   </button>
                   <button
                     type="button"
@@ -988,6 +1120,9 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                               <div className="space-y-1">
                                 {grp.lessons.map((lsn) => {
                                   const isActive = selectedLessonId === lsn.id;
+                                  const lsnFileDetails = getFileDetails(lsn.videoName || lsn.fileName, lsn.contentType);
+                                  const LsnFileIcon = lsnFileDetails.icon;
+
                                   return (
                                     <div
                                       key={lsn.id}
@@ -998,10 +1133,13 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                                           : 'bg-[#FAFBFD] hover:bg-[#F1F3F5] text-[var(--navy)] font-medium border border-transparent'
                                       }`}
                                     >
-                                      {/* اليمين: الأيقونة والعنوان */}
+                                      {/* اليمين: أيقونة نوع الملف والعنوان */}
                                       <div className="flex items-center gap-2 truncate flex-1 min-w-0">
-                                        <span className="text-[13px]">
-                                          {lsn.contentType === 'file' ? '📄' : '📹'}
+                                        <span
+                                          className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${lsnFileDetails.badgeClass}`}
+                                          title={`نوع الملف: ${lsnFileDetails.label}`}
+                                        >
+                                          <LsnFileIcon className="w-3 h-3" />
                                         </span>
                                         <span className="text-[11px] truncate">{lsn.title}</span>
                                       </div>
@@ -1085,12 +1223,18 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
 
               {/* رأس المحرر والإجراءات */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-[var(--border-light)]">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   <h2 className="text-[15px] font-extrabold text-[var(--navy)] m-0 flex items-center gap-2">
                     <span>{lessonTitle}</span>
-                    <span className="text-[14px]">
-                      {activeLesson.contentType === 'file' ? '📄' : '📹'}
-                    </span>
+                    {currentFileDetails.type !== 'none' && (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${currentFileDetails.badgeClass}`}
+                        title={`نوع الملف: ${currentFileDetails.label}`}
+                      >
+                        <CurrentFileIcon className="w-3 h-3" />
+                        <span>{currentFileDetails.badge}</span>
+                      </span>
+                    )}
                   </h2>
                   <span
                     className={`badge-pill ${status === 'published' ? 'on' : 'draft'}`}
@@ -1232,40 +1376,7 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                   </div>
                 </div>
 
-                {/* 3. نوع المحتوى */}
-                <div>
-                  <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
-                    نوع المحتوى <span className="text-[var(--coral)]">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleContentTypeChange('video')}
-                      className={`py-2 px-3 rounded-lg text-[11.5px] font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        lessonContentType === 'video'
-                          ? 'bg-[var(--teal)] text-white shadow-xs'
-                          : 'bg-white border border-[var(--border-mid)] text-[var(--navy)] hover:bg-[#F6F8FB]'
-                      }`}
-                    >
-                      <Video className="w-4 h-4" />
-                      <span>فيديو (MP4)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleContentTypeChange('file')}
-                      className={`py-2 px-3 rounded-lg text-[11.5px] font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        lessonContentType === 'file'
-                          ? 'bg-[var(--teal)] text-white shadow-xs'
-                          : 'bg-white border border-[var(--border-mid)] text-[var(--navy)] hover:bg-[#F6F8FB]'
-                      }`}
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>ملف (PDF / مستندات)</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4. مستوى الصعوبة */}
+                {/* 3. مستوى الصعوبة */}
                 <div>
                   <label className="block text-[11px] font-bold text-[var(--navy)] mb-1.5">
                     مستوى الصعوبة <span className="text-[var(--coral)]">*</span>
@@ -1307,57 +1418,72 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                   </div>
                 </div>
 
-                {/* 5. رفع وسائط / ملف الدرس حسب نوع المحتوى المختار */}
+                {/* 4. ملف الدرس المرفق مع أيقونة نوع الملف */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-bold text-[var(--navy)]">
-                      {lessonContentType === 'file'
-                        ? 'رفع ملف الدرس (PDF, DOCX, PPTX، حتى 50MB)'
-                        : 'رفع فيديو الدرس (MP4، حتى 200MB)'}
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[11px] font-bold text-[var(--navy)]">
+                        ملف الدرس المرفق
+                      </label>
+                      {videoFile && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px] font-bold border ${currentFileDetails.badgeClass}`}
+                          title={`نوع الملف: ${currentFileDetails.label}`}
+                        >
+                          <CurrentFileIcon className="w-3 h-3" />
+                          <span>{currentFileDetails.label}</span>
+                        </span>
+                      )}
+                    </div>
                     {videoFile ? (
-                      <span className="text-[10px] text-[var(--teal)] font-bold">
-                        {lessonContentType === 'file' ? 'ملف مرفوع' : 'فيديو مرفوع'}
+                      <span className="text-[10px] text-[var(--teal)] font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        تم إرفاق الملف بنجاح
                       </span>
                     ) : (
-                      <span className="text-[10px] text-[#D97706] font-bold">
-                        الرفع مطلوب
+                      <span className="text-[10px] text-[var(--gray)] font-medium">
+                        (اختياري — فيديو MP4، مستند PDF، عرض PPTX، وورد)
                       </span>
                     )}
                   </div>
 
-                  {/* Input غير مرئي لرفع الملف بالصيغ المحددة */}
+                  {/* Input غير مرئي لرفع كافة صيغ الملفات والفيديوهات */}
                   <input
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    accept={
-                      lessonContentType === 'file'
-                        ? '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt'
-                        : 'video/mp4,.mp4'
-                    }
+                    accept=".mp4,.mov,.webm,.avi,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
                     className="hidden"
                   />
 
                   {videoFile ? (
-                    /* حالة وجود ملف: شريط بسيط وواضح */
-                    <div className="border border-[var(--border-light)] rounded-xl bg-[#FAFBFD] p-3 flex items-center justify-between gap-3">
+                    /* حالة وجود ملف: بطاقة واضحة تعرض أيقونة نوع الملف واسمه وحجمه وأزرار الإجراءات */
+                    <div className="border border-[var(--border-light)] rounded-xl bg-[#FAFBFD] p-3 flex items-center justify-between gap-3 shadow-2xs">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className="w-8 h-8 rounded-lg bg-[#E3F7F4] text-[var(--teal)] flex items-center justify-center shrink-0">
-                          {lessonContentType === 'file' ? (
-                            <FileText className="w-4 h-4" />
-                          ) : (
-                            <Video className="w-4 h-4" />
-                          )}
+                        {/* أيقونة نوع الملف البارزة */}
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border shadow-2xs ${currentFileDetails.badgeClass}`}
+                          title={`أيقونة نوع الملف: ${currentFileDetails.label}`}
+                        >
+                          <CurrentFileIcon className="w-4 h-4" />
                         </div>
-                        <div className="min-w-0 text-right">
-                          <div className="text-[11.5px] font-bold text-[var(--navy)] truncate font-latin">
-                            {videoFile.name}
+                        <div className="min-w-0 text-right flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11.5px] font-bold text-[var(--navy)] truncate font-latin">
+                              {videoFile.name}
+                            </span>
+                            <span
+                              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded font-latin border ${currentFileDetails.badgeClass}`}
+                            >
+                              {currentFileDetails.badge}
+                            </span>
                           </div>
-                          <div className="text-[9.5px] text-[var(--gray)] font-latin">
-                            {videoFile.size} •{' '}
-                            {videoFile.name.split('.').pop()?.toUpperCase() ||
-                              (lessonContentType === 'file' ? 'PDF' : 'MP4')}
+                          <div className="text-[9.5px] text-[var(--gray)] font-latin mt-0.5 flex items-center gap-1.5">
+                            <span>{videoFile.size}</span>
+                            <span>•</span>
+                            <span className="font-sans font-medium text-[var(--navy)]">
+                              {currentFileDetails.label}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1365,23 +1491,39 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
+                          onClick={() => setIsPreviewModalOpen(true)}
+                          className="p-1.5 text-[var(--gray)] hover:text-[var(--teal)] hover:bg-[#EAFBF9] rounded-lg transition-colors cursor-pointer"
+                          title="معاينة الملف"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-1.5 text-[var(--gray)] hover:text-[var(--teal)] hover:bg-[#EAFBF9] rounded-lg transition-colors cursor-pointer"
+                          title="تغيير الملف"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             setDeleteTarget({
                               type: 'attachment',
                               id: activeLesson?.id || '',
-                              name: videoFile?.name || (lessonContentType === 'file' ? 'الملف المرفق' : 'الفيديو المرفق'),
+                              name: videoFile?.name || 'الملف المرفق',
                             });
                             setIsDeleteModalOpen(true);
                           }}
                           className="p-1.5 text-[var(--gray)] hover:text-[#E53E3E] hover:bg-[#FFF5F5] rounded-lg transition-colors cursor-pointer"
-                          title={lessonContentType === 'file' ? 'حذف الملف' : 'حذف الفيديو'}
+                          title="حذف الملف المرفق"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
                   ) : (
-                    /* حالة عدم وجود ملف: صندوق رفع بسيط ومباشر بالصيغ الخاصة بالنوع المختار */
+                    /* حالة عدم وجود ملف: صندوق رفع مباشر وشامل */
                     <div>
                       <div
                         onDragOver={(e) => {
@@ -1398,17 +1540,11 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
                         }`}
                       >
                         <div className="flex items-center justify-center gap-2 text-[11px] font-bold text-[var(--navy)]">
-                          {lessonContentType === 'file' ? (
-                            <FileText className="w-4 h-4 text-[var(--teal)]" />
-                          ) : (
-                            <Upload className="w-4 h-4 text-[var(--teal)]" />
-                          )}
-                          <span>اسحب الملف هنا أو اضغط للاختيار</span>
+                          <Upload className="w-4 h-4 text-[var(--teal)]" />
+                          <span>اسحب الملف أو الفيديو هنا أو اضغط للاختيار</span>
                         </div>
                         <div className="text-[9.5px] text-[var(--gray)] mt-1 font-latin">
-                          {lessonContentType === 'file'
-                            ? 'PDF, DOC, DOCX, PPT, PPTX • حتى 50MB'
-                            : 'MP4 • حتى 200MB'}
+                          MP4, MOV, PDF, DOCX, PPTX, XLSX • حتى 200MB
                         </div>
                       </div>
 
@@ -1469,53 +1605,23 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
               </p>
 
               {/* زر الإجراء الأساسي */}
-              <button
-                type="button"
-                onClick={openAddUnitModal}
-                className="abtn teal py-2 px-5 text-[12px] flex items-center gap-2 font-bold shadow-xs mb-8"
-              >
-                <Plus className="w-4 h-4" />
-                <span>إنشاء الوحدة الأولى للمنهج</span>
-              </button>
-
-              {/* دليل الخطوات للمواد الحديثة (3 بطاقات متناسقة) */}
-              <div className="w-full max-w-[580px] bg-[#F8FAFC] border border-[var(--border-light)] rounded-xl p-4 text-right">
-                <div className="text-[11.5px] font-extrabold text-[var(--navy)] mb-3 pb-2 border-b border-[var(--border-light)] flex items-center justify-between">
-                  <span>دليل البدء السريع لتجهيز المادة:</span>
-                  <span className="text-[10px] font-bold text-[var(--teal)]">3 خطوات رئيسية</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-white p-3 rounded-lg border border-[var(--border-light)] flex flex-col">
-                    <span className="w-5 h-5 rounded-full bg-[#E6F6F4] text-[var(--teal)] text-[10px] font-extrabold flex items-center justify-center mb-1.5 self-start">
-                      1
-                    </span>
-                    <span className="text-[11px] font-bold text-[var(--navy)] mb-1">إنشاء الوحدات</span>
-                    <span className="text-[10px] text-[var(--gray)] leading-normal">
-                      قسّم منهج {currentSubject?.name || 'العلوم'} إلى وحدات رئيسية (مثلاً: الكائنات الحية، المادة والطاقة).
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-3 rounded-lg border border-[var(--border-light)] flex flex-col">
-                    <span className="w-5 h-5 rounded-full bg-[#E6F6F4] text-[var(--teal)] text-[10px] font-extrabold flex items-center justify-center mb-1.5 self-start">
-                      2
-                    </span>
-                    <span className="text-[11px] font-bold text-[var(--navy)] mb-1">تنظيم المجموعات</span>
-                    <span className="text-[10px] text-[var(--gray)] leading-normal">
-                      أنشئ موضوعات ومجموعات متفرعة داخل كل وحدة لتسلسل الدروس منطقياً.
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-3 rounded-lg border border-[var(--border-light)] flex flex-col">
-                    <span className="w-5 h-5 rounded-full bg-[#E6F6F4] text-[var(--teal)] text-[10px] font-extrabold flex items-center justify-center mb-1.5 self-start">
-                      3
-                    </span>
-                    <span className="text-[11px] font-bold text-[var(--navy)] mb-1">إدراج الدروس والاختبارات</span>
-                    <span className="text-[10px] text-[var(--gray)] leading-normal">
-                      ارفع الفيديوهات التعليمية، حدد نواتج التعلم ومستوى الصعوبة وبنك الأسئلة.
-                    </span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2.5 flex-wrap justify-center">
+                <button
+                  type="button"
+                  onClick={openAddUnitModal}
+                  className="abtn teal py-2 px-5 text-[12px] flex items-center gap-2 font-bold shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>إنشاء الوحدة الأولى للمنهج</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsUploadCurriculumModalOpen(true)}
+                  className="abtn outline py-2 px-4 text-[12px] flex items-center gap-2 font-bold text-[var(--teal)] border-[var(--teal)]/40 hover:bg-[#E3F7F4] cursor-pointer"
+                >
+                  <UploadCloud className="w-4 h-4 text-[var(--teal)]" />
+                  <span>رفع ومعالجة ملف المنهج</span>
+                </button>
               </div>
             </div>
           ) : (
@@ -1928,25 +2034,23 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
             <div className="space-y-3">
               {/* نوع المحتوى */}
               <div>
-                <div className="text-[10px] font-bold text-[var(--gray)] mb-0.5">نوع المحتوى</div>
+                <div className="text-[10px] font-bold text-[var(--gray)] mb-0.5">نوع الملف والمحتوى</div>
                 <div className="text-[12.5px] font-extrabold text-[var(--navy)] flex items-center gap-1.5">
-                  <span>{lessonContentType === 'file' ? 'ملف مستندات' : 'فيديو'}</span>
-                  <span className="text-[14px]">{lessonContentType === 'file' ? '📄' : '🎬'}</span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${currentFileDetails.badgeClass}`}
+                  >
+                    <CurrentFileIcon className="w-3.5 h-3.5" />
+                    <span>{currentFileDetails.label}</span>
+                  </span>
                 </div>
               </div>
 
               {/* الملف أو الفيديو المرفق */}
               {videoFile && (
                 <div>
-                  <div className="text-[10px] font-bold text-[var(--gray)] mb-0.5">
-                    {lessonContentType === 'file' ? 'الملف المرفق' : 'الفيديو المرفق'}
-                  </div>
+                  <div className="text-[10px] font-bold text-[var(--gray)] mb-0.5">الملف المرفق</div>
                   <div className="text-[11.5px] font-bold text-[var(--navy)] font-latin truncate bg-[#FAFBFD] p-2 rounded-lg border border-[var(--border-light)] flex items-center gap-2">
-                    {lessonContentType === 'file' ? (
-                      <FileText className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-                    ) : (
-                      <Video className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
-                    )}
+                    <CurrentFileIcon className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
                     <span className="truncate">{videoFile.name}</span>
                     <span className="text-[9.5px] text-[var(--gray)] mr-auto shrink-0 font-latin">
                       {videoFile.size}
@@ -1999,14 +2103,15 @@ export const CurriculumPage: React.FC<CurriculumPageProps> = () => {
         </div>
       )}
 
-      {/* 6. نافذة مساعد المنهج بالذكاء الاصطناعي (AI Curriculum Assistant Modal) */}
-      <AiCurriculumModal
-        isOpen={isAiCurriculumModalOpen}
-        onClose={() => setIsAiCurriculumModalOpen(false)}
-        onApplyCurriculum={handleApplyAiCurriculum}
+      {/* نافذة رفع ومعالجة ملف المنهج ووضعه في شجرة المنهج مباشرة */}
+      <UploadCurriculumModal
+        isOpen={isUploadCurriculumModalOpen}
+        onClose={() => setIsUploadCurriculumModalOpen(false)}
+        onApplyCurriculum={handleApplyCurriculumFromFile}
         currentSubjectName={selectedSubjectName}
         currentGradeName={selectedGradeName}
         currentCountryName={selectedCountryName}
+        currentSystemName={selectedSystemName}
         currentYearName={selectedYearName}
         currentSemesterName={selectedSemesterName}
       />

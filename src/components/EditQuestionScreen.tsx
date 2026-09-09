@@ -54,6 +54,9 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
   // المجموعة
   const [group, setGroup] = useState<string>(question.group || 'الجمع والطرح');
 
+  // الدرس
+  const [lesson, setLesson] = useState<string>(question.lesson || 'lesson-1');
+
   // مستوى الصعوبة
   const [difficulty, setDifficulty] = useState<'سهل' | 'متوسط' | 'صعب'>(
     question.difficulty || 'سهل'
@@ -100,6 +103,7 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
           : 'اختيار من متعدد',
       difficulty,
       group,
+      lesson,
       skillTag,
       options: questionType === 'اختيار من متعدد' ? options : undefined,
     };
@@ -302,7 +306,27 @@ export const EditQuestionScreen: React.FC<EditQuestionScreenProps> = ({
             </select>
           </div>
 
-          {/* 5. مستوى الصعوبة * */}
+          {/* 5. الدرس (اختياري) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[11px] font-bold text-[var(--navy)]">
+                الدرس
+              </label>
+              <span className="text-[9.5px] text-[var(--gray)] font-normal">اختياري</span>
+            </div>
+            <select
+              value={lesson}
+              onChange={(e) => setLesson(e.target.value)}
+              className="admin-select w-full text-[11px] font-bold text-[var(--navy)] cursor-pointer"
+            >
+              <option value="lesson-1">الدرس 1: مقدمة في جمع وطرح الأعداد</option>
+              <option value="lesson-2">الدرس 2: خصائص الجمع والطرح</option>
+              <option value="lesson-3">الدرس 3: حل المسائل وتقدير النواتج</option>
+              <option value="lesson-4">الدرس 4: الحساب الذهني والتطبيقات</option>
+            </select>
+          </div>
+
+          {/* 6. مستوى الصعوبة * */}
           <div>
             <label className="block text-[11px] font-bold text-[var(--navy)] mb-2">
               مستوى الصعوبة <span className="text-[var(--coral)]">*</span>
