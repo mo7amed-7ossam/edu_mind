@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
 import { EditAdminUserScreen } from './EditAdminUserScreen';
 
 export interface AdminUser {
@@ -97,8 +97,24 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({
   const [activeView, setActiveView] = useState<'list' | 'edit' | 'create'>('list');
   const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
 
+  // حالة البحث
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
   // حالة مودال الحذف
   const [itemToDelete, setItemToDelete] = useState<AdminUser | null>(null);
+
+  // تصفية مسؤولي النظام حسب البحث
+  const filteredAdmins = admins.filter((admin) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      admin.name.toLowerCase().includes(q) ||
+      admin.email.toLowerCase().includes(q) ||
+      admin.role.toLowerCase().includes(q) ||
+      (admin.username && admin.username.toLowerCase().includes(q)) ||
+      (admin.phone && admin.phone.includes(q))
+    );
+  });
 
   // إشعار الشريط العلوي بتغير الشاشة الفرعية وتمرير دالة الرجوع
   useEffect(() => {
@@ -171,10 +187,35 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({
   return (
     <div className="flex flex-col gap-[14px] w-full">
       {/* شريط الإجراءات العلوي */}
-      <div className="flex items-center justify-start">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* صندوق البحث بحجم مناسب وواضح */}
+        <div className="relative w-full sm:w-[320px]">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[var(--gray)]">
+            <Search size={14} strokeWidth={2.2} />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="بحث بالاسم، البريد، أو الدور..."
+            className="admin-input !pr-9 !pl-8 text-[11.5px] w-full"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-[var(--gray)] hover:text-[var(--navy)] cursor-pointer"
+              title="مسح البحث"
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
+
+        {/* زر إضافة مسؤول */}
         <button
           type="button"
-          className="abtn teal cursor-pointer"
+          className="abtn teal cursor-pointer self-start sm:self-auto"
           onClick={handleOpenAdd}
         >
           <Plus size={15} strokeWidth={2.5} />
@@ -186,7 +227,8 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({
       <div className="admin-panel">
         <div className="panel-head mb-4 flex items-center justify-between">
           <h4 className="text-[13.5px] font-extrabold text-[#17325C]">
-            إدارة مسؤولي النظام ({admins.length})
+            إدارة مسؤولي النظام ({filteredAdmins.length}
+            {searchQuery ? ` من ${admins.length}` : ''})
           </h4>
         </div>
 
@@ -203,14 +245,16 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({
               </tr>
             </thead>
             <tbody>
-              {admins.length === 0 ? (
+              {filteredAdmins.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-[var(--gray)] text-[12px]">
-                    لا يوجد مسؤولو نظام حالياً
+                    {searchQuery
+                      ? `لا توجد نتائج مطابقة لبحثك "${searchQuery}"`
+                      : 'لا يوجد مسؤولو نظام حالياً'}
                   </td>
                 </tr>
               ) : (
-                admins.map((item) => (
+                filteredAdmins.map((item) => (
                   <tr key={item.id} className="hover:bg-[#F9FBFC] transition-colors">
                     {/* المسؤول */}
                     <td>
@@ -289,7 +333,7 @@ export const AdminUsersPage: React.FC<AdminUsersPageProps> = ({
         {/* تذييل الجدول */}
         <div className="mt-4 pt-3 border-t border-[var(--border-light)] flex items-center justify-between text-[11px] text-[var(--gray)] font-medium">
           <span>
-            الصفوف 1–{admins.length} من {admins.length}
+            الصفوف 1–{filteredAdmins.length} من {admins.length}
           </span>
         </div>
       </div>
