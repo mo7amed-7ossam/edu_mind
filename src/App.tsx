@@ -5,6 +5,7 @@ import { AcademicCalendarPage } from './components/AcademicCalendarPage';
 import { CountriesPage } from './components/CountriesPage';
 import { CurriculumPage } from './components/CurriculumPage';
 import { QuestionBankPage } from './components/QuestionBankPage';
+import { AdminUsersPage } from './components/AdminUsersPage';
 
 export default function App() {
   // قراءة الصفحة المبدئية من عنوان الـ URL (Hash) أو التخزين المحلي لتجنب العودة لـ "المستخدمون" عند الحفظ أو التحديث
@@ -19,6 +20,7 @@ export default function App() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     users: true,
     foundation: true,
+    governance: true,
   });
 
   const [isNotifOpen, setIsNotifOpen] = useState<boolean>(false);
@@ -182,6 +184,11 @@ export default function App() {
         return {
           title: 'المساعد الذكي والسلامة',
           category: 'الذكاء الاصطناعي',
+        };
+      case 'admin-users':
+        return {
+          title: 'مسؤولو النظام',
+          category: 'الحوكمة',
         };
       case 'roles':
         return {
@@ -384,10 +391,14 @@ export default function App() {
           <div
             className="sidebar-grp-children"
             style={{
-              maxHeight: openGroups['governance'] ? '200px' : '0px',
+              maxHeight: openGroups['governance'] ? '260px' : '0px',
               opacity: openGroups['governance'] ? 1 : 0,
             }}
           >
+            <div className={`sidebar-item sub ${activePage === 'admin-users' ? 'active' : ''}`} onClick={() => handlePageSelect('admin-users')}>
+              <span className="ic">👥</span>
+              <span>مسؤولو النظام</span>
+            </div>
             <div className={`sidebar-item sub ${activePage === 'roles' ? 'active' : ''}`} onClick={() => handlePageSelect('roles')}>
               <span className="ic">🔐</span>
               <span>الأدوار والصلاحيات</span>
@@ -479,7 +490,9 @@ export default function App() {
         {/* الهيدر */}
         <div className="admin-topbar">
           <div>
-            <div className="topbar-title">{pageInfo.title}</div>
+            <div className="topbar-title">
+              {isSubScreen && subScreenTitle ? subScreenTitle : pageInfo.title}
+            </div>
             <div className="topbar-crumb flex items-center gap-1.5 text-[10.5px]">
               <span
                 className="hover:text-[var(--teal)] cursor-pointer transition-colors"
@@ -504,7 +517,11 @@ export default function App() {
                 <>
                   <span className="text-[var(--mid)]">/</span>
                   <span className="font-bold text-[var(--navy)]">
-                    {subScreenTitle || 'تفاصيل'}
+                    {activePage === 'admin-users'
+                      ? subScreenTitle.startsWith('إضافة')
+                        ? 'إضافة مسؤول'
+                        : 'بيانات المسؤول'
+                      : subScreenTitle || 'تفاصيل'}
                   </span>
                 </>
               )}
@@ -841,6 +858,16 @@ export default function App() {
             <SubscriptionsPage />
           ) : activePage === 'calendar' ? (
             <AcademicCalendarPage
+              onSubScreenChange={(isSub, title) => {
+                setIsSubScreen(isSub);
+                setSubScreenTitle(title || '');
+              }}
+              onBackRequest={(fn) => {
+                backHandlerRef.current = fn;
+              }}
+            />
+          ) : activePage === 'admin-users' ? (
+            <AdminUsersPage
               onSubScreenChange={(isSub, title) => {
                 setIsSubScreen(isSub);
                 setSubScreenTitle(title || '');
