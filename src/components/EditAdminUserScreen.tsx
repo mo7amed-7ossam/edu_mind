@@ -202,19 +202,31 @@ export const EditAdminUserScreen: React.FC<EditAdminUserScreenProps> = ({
             </p>
           </div>
 
-          {/* تفعيل الحساب (سويتش) */}
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-[11.5px] font-bold text-[var(--navy)]">
-              تفعيل الحساب (يسمح بتسجيل الدخول فوراً)
-            </span>
+          {/* تفعيل الحساب (سويتش) مطابق للصورة بدقة ومحاذى لليمين */}
+          <div className="flex items-center justify-start pt-2">
             <div
-              className={`toggle-switch ${isActive ? 'on' : ''}`}
+              className="inline-flex items-center gap-3 cursor-pointer select-none"
               onClick={() => setIsActive(!isActive)}
-              role="switch"
-              aria-checked={isActive}
-              title="تبديل حالة التفعيل"
+              dir="ltr"
             >
-              <div className="toggle-thumb" />
+              <span className="text-[12px] font-bold text-[var(--navy)]">
+                تفعيل الحساب (يسمح بتسجيل الدخول فوراً)
+              </span>
+
+              {/* شكل السويتش البيضاوي مع الدائرة البيضاء مطابق للصورة */}
+              <div
+                role="switch"
+                aria-checked={isActive}
+                className={`relative w-[46px] h-[24px] rounded-full transition-colors duration-200 ease-in-out shrink-0 ${
+                  isActive ? 'bg-[var(--teal)]' : 'bg-[#CBD5E1]'
+                }`}
+              >
+                <div
+                  className={`absolute top-[2px] w-[20px] h-[20px] bg-white rounded-full shadow-xs transition-all duration-200 ease-in-out ${
+                    isActive ? 'left-[2px]' : 'left-[24px]'
+                  }`}
+                />
+              </div>
             </div>
           </div>
         </div>
